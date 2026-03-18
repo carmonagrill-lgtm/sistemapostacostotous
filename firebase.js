@@ -92,21 +92,33 @@ async function cargarTodosDatos() {
   if (!firebaseReady) return;
   showFBStatus('loading', '⏳ Cargando datos...');
   try {
-    await Promise.all([
-      cargarProductos(),
-      cargarIngredientes(),
-      cargarProduccion(),
-      cargarRecetas(),
-      cargarCompras(),
-      cargarProdLogs(),
-      cargarStaff(),
-      cargarEmpleados(),
-      cargarProveedores(),
-      cargarHistDays(),
-      cargarConfig(),
-    ]);
+    await cargarProductos();
+    await cargarIngredientes();
+    await cargarProduccion();
+    await cargarStaff();
+    await cargarEmpleados();
+    await cargarProveedores();
+    await cargarCompras();
+    await cargarProdLogs();
+    await cargarHistDays();
+    await cargarConfig();
+    // Recetas al final — depende de que recetas.js ya cargó
+    if (typeof recetas !== 'undefined') {
+      await cargarRecetas();
+    }
     showFBStatus('ok', '✅ Datos cargados desde Firebase');
     addFBLog(true, 'Carga inicial completa');
+    renderCats && renderCats();
+    renderProds && renderProds();
+    renderInvFull && renderInvFull();
+    initLogin && initLogin();
+  } catch (e) {
+    console.error('Error cargando datos:', e);
+    showFBStatus('error', '❌ Error al cargar: ' + e.message);
+    addFBLog(false, 'Error carga: ' + e.message);
+   }
+  }
+   
     // Refrescar UI
     renderCats();
     renderProds();
@@ -283,11 +295,12 @@ async function eliminarProduccionItem(id) {
 
 // ── 10. RECETAS ────────────────────────────────────────────────
 async function cargarRecetas() {
+  if (typeof recetas === 'undefined') return;
   const snap = await db.collection(COL.recetas).get();
   if (!snap.empty) {
     recetas = snap.docs.map(d => ({ ...d.data(), _fbId: d.id }));
   } else {
-    await subirRecetas();
+    if (recetas.length) await subirRecetas();
   }
 }
 

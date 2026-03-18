@@ -140,7 +140,6 @@ function renderCart() {
   updTotals();
 }
 
-
 function applyDisc() {
   const v = document.getElementById('dinput').value.trim(), pct = parseFloat(v);
   if (v==='TACO20') { disc=20; alert('¡Cupón TACO20: 20% de descuento! 🌮'); }
@@ -222,7 +221,8 @@ function processPay() {
   txns.unshift(tx); salesTotal += total;
   servicioCount[tipoServicio] = (servicioCount[tipoServicio]||0) + 1;
   sendToKitchen(tx);
-  if (sheetsUrl) syncSheets(tx);
+  // ── FIREBASE: guardar venta (reemplaza Google Sheets) ──
+  if (window._fbPatchVenta) window._fbPatchVenta(tx);
   showReceipt(tx); renderProds();
 }
 
@@ -246,7 +246,7 @@ function showReceipt(tx) {
 
 function newSale() {
   closeM('mRcpt'); packages=[]; nextPkg=0; disc=0; salesOwner='alex'; tipoServicio='aqui';
-  if (ivaOn) toggleIva(); // reset IVA to off for next sale
+  if (ivaOn) toggleIva();
   selServicio('aqui');
   const ind=document.getElementById('owner-indicator'); if(ind) ind.style.display='none';
   document.getElementById('dinput').value=''; document.getElementById('discLine').style.display='none';
@@ -307,7 +307,6 @@ function renderIngrCards() {
     </div>`;
   }).join('') || '<div style="text-align:center;color:var(--c-tx3);padding:30px 0;font-size:13px;font-weight:700;">Sin ingredientes</div>';
 
-  // Tabla tablet
   if (document.getElementById('itbody-ingr')) {
     document.getElementById('itbody-ingr').innerHTML = list.map(i=>{
       const lo=i.stock<=i.min,md=i.stock<=i.min*2&&!lo;
@@ -317,7 +316,15 @@ function renderIngrCards() {
   }
 }
 
-function adjIngr(id,d){const i=ingredientes.find(x=>x.id===id);if(i){i.stock=Math.max(0,i.stock+d);renderIngrCards();}}
+function adjIngr(id,d){
+  const i=ingredientes.find(x=>x.id===id);
+  if(i){
+    i.stock=Math.max(0,i.stock+d);
+    renderIngrCards();
+    // ── FIREBASE ──
+    if (window._fbPatchAdjIngr) window._fbPatchAdjIngr(id);
+  }
+}
 
 let editIngrId = null;
 function openAddIngr(){
@@ -347,13 +354,18 @@ function saveIngr(){
     notas:document.getElementById('in-notas').value.trim()};
   if(editIngrId){const i=ingredientes.findIndex(x=>x.id===editIngrId);ingredientes[i]={...ingredientes[i],...data};}
   else{const nid=ingredientes.length?Math.max(...ingredientes.map(x=>x.id))+1:1;ingredientes.push({id:nid,...data});}
+  // ── FIREBASE ──
+  const ingrGuardar = editIngrId ? ingredientes.find(x=>x.id===editIngrId) : ingredientes[ingredientes.length-1];
+  if (window._fbPatchSaveIngr) window._fbPatchSaveIngr(ingrGuardar);
   closeM('mIngr');renderIngrCards();renderInvIngrCatTabs();
 }
 function delIngr(id){
   const i=ingredientes.find(x=>x.id===id);
   if(!i)return;
-  // Simple confirm via modal not available here — direct delete with no native confirm
-  ingredientes=ingredientes.filter(x=>x.id!==id);renderIngrCards();renderInvIngrCatTabs();
+  ingredientes=ingredientes.filter(x=>x.id!==id);
+  // ── FIREBASE ──
+  if (window._fbPatchDelIngr) window._fbPatchDelIngr(id);
+  renderIngrCards();renderInvIngrCatTabs();
 }
 
 /* ── Producción ── */
@@ -395,7 +407,15 @@ function renderProdCards(){
   }).join('')||'<div style="text-align:center;color:var(--c-tx3);padding:30px 0;font-size:13px;font-weight:700;">Sin productos elaborados</div>';
 }
 
-function adjProd2(id,d){const p=produccion.find(x=>x.id===id);if(p){p.stock=Math.max(0,p.stock+d);renderProdCards();}}
+function adjProd2(id,d){
+  const p=produccion.find(x=>x.id===id);
+  if(p){
+    p.stock=Math.max(0,p.stock+d);
+    renderProdCards();
+    // ── FIREBASE ──
+    if (window._fbPatchAdjProd2) window._fbPatchAdjProd2(id);
+  }
+}
 
 let editProd2Id=null;
 function openAddProd2(){
@@ -421,119 +441,14 @@ function saveProd2(){
     notas:document.getElementById('pr-notas').value.trim()};
   if(editProd2Id){const i=produccion.findIndex(x=>x.id===editProd2Id);produccion[i]={...produccion[i],...data};}
   else{const nid=produccion.length?Math.max(...produccion.map(x=>x.id))+1:1;produccion.push({id:nid,...data});}
+  // ── FIREBASE ──
+  const prod2Guardar = editProd2Id ? produccion.find(x=>x.id===editProd2Id) : produccion[produccion.length-1];
+  if (window._fbPatchSaveProd2) window._fbPatchSaveProd2(prod2Guardar);
   closeM('mProd2');renderProdCards();renderInvProdCatTabs();
 }
-function delProd2(id){produccion=produccion.filter(x=>x.id!==id);renderProdCards();renderInvProdCatTabs();}
-
-/* ══ INVENTARIO ══ */
-function renderInvCatTabs() {
-  const cats = ['Todos', ...new Set(products.map(p=>p.cat))];
-  document.getElementById('ictabs').innerHTML = cats.map(c=>
-    `<button class="ictab ${c===invCat?'on':''}" onclick="invCat='${c}';renderInvCatTabs();renderInv()">${c}</button>`
-  ).join('');
-}
-
-function renderInv() {
-  renderInvCatTabs();
-  const list = invCat==='Todos' ? products : products.filter(p=>p.cat===invCat);
-  const rows = list.map(p=>{ const m=p.price>0?((p.price-p.cost)/p.price*100).toFixed(0):0; const sc=p.stock<=p.min?'slo':p.stock<=p.min*2?'smd':'sok'; return {p,m,sc}; });
-  document.getElementById('icards').innerHTML = rows.map(({p,m,sc})=>
-    `<div class="icard"><div class="icard-ico">${p.emoji}</div><div class="icard-inf"><div class="icard-name">${p.name}</div><div class="icard-cat">${p.cat}</div><div class="icard-meta">${p.price>0?`<span class="iprice">$${p.price.toFixed(2)}</span>`:''} ${p.price>0?`<span class="imargin">+${m}%</span>`:''} <span class="spill ${sc}">${p.stock} pzas.</span></div><div class="istk"><button class="isb" onclick="adjS(${p.id},-1)">−</button><span class="isn">${p.stock}</span><button class="isb" onclick="adjS(${p.id},1)">+</button><span style="font-size:10px;color:var(--c-tx3);font-weight:600;">stock</span></div></div><div class="iacts"><button class="ied" onclick="editProd(${p.id})">✏️ Editar</button><button class="idl" onclick="delProd(${p.id})">🗑️ Borrar</button></div></div>`
-  ).join('') || '<div style="text-align:center;color:var(--c-tx3);padding:30px 0;font-size:13px;font-weight:700;">Sin productos en esta categoría</div>';
-
-  document.getElementById('itbody').innerHTML = rows.map(({p,m,sc})=>
-    `<tr><td>${p.emoji} <strong>${p.name}</strong></td><td style="color:var(--c-tx2)">${p.cat}</td><td style="font-family:'JetBrains Mono',monospace;color:var(--c-or);font-weight:700">${p.price>0?'$'+p.price.toFixed(2):'—'}</td><td style="font-family:'JetBrains Mono',monospace;color:var(--c-tx2)">${p.cost>0?'$'+p.cost.toFixed(2):'—'}</td><td><div style="display:flex;align-items:center;gap:6px;"><button class="tbe" style="padding:4px 8px;" onclick="adjS(${p.id},-1)">−</button><span class="spill ${sc}">${p.stock}</span><button class="tbe" style="padding:4px 8px;" onclick="adjS(${p.id},1)">+</button></div></td><td style="color:var(--c-gr);font-weight:800">${p.price>0?m+'%':'—'}</td><td><div class="tba"><button class="tbe" onclick="editProd(${p.id})">✏️</button><button class="tbd" onclick="delProd(${p.id})">🗑️</button></div></td></tr>`
-  ).join('');
-}
-
-let recetas = [
-  // Salsa Verde — del PDF
-  {
-    id:1, nombre:'Salsa Verde', tipo:'subreceta', rinde:14, rindeUnit:'platillos', notas:'Salsas',
-    ingredientes:[
-      {tipo:'ingr', refId:20, nombre:'Tomate Fresadilla', cant:3,    unidad:'Kg'},
-      {tipo:'ingr', refId:24, nombre:'Consomé de Pollo',  cant:20,   unidad:'Gr'},
-      {tipo:'ingr', refId:9,  nombre:'Cebolla Blanca',    cant:200,  unidad:'Gr'},
-      {tipo:'ingr', refId:16, nombre:'Cilantro',          cant:1,    unidad:'Pz'},
-      {tipo:'ingr', refId:15, nombre:'Chile Serrano',     cant:50,   unidad:'Gr'},
-      {tipo:'ingr', refId:8,  nombre:'Ajo',               cant:0.5,  unidad:'Pz'},
-      {tipo:'ingr', refId:22, nombre:'Aceite',            cant:400,  unidad:'Ml'},
-    ]
-  },
-  // Chilaquiles Verdes — del PDF
-  {
-    id:2, nombre:'Chilaquiles Verdes', tipo:'receta', rinde:1, rindeUnit:'platillos', notas:'Almuerzos',
-    ingredientes:[
-      {tipo:'sub',  refId:1,  nombre:'Salsa Verde',          cant:1,  unidad:'Orden'},
-      {tipo:'ingr', refId:35, nombre:'Totopos',              cant:90, unidad:'Gr'},
-      {tipo:'ingr', refId:32, nombre:'Queso Durangueño',     cant:45, unidad:'Gr'},
-      {tipo:'ingr', refId:4,  nombre:'Pechuga de Pollo',     cant:45, unidad:'Gr'},
-      {tipo:'ingr', refId:26, nombre:'Crema',                cant:15, unidad:'Ml'},
-      {tipo:'ingr', refId:27, nombre:'Frijol',               cant:50, unidad:'Gr'},
-      {tipo:'ingr', refId:18, nombre:'Perejil',              cant:1,  unidad:'Pz'},
-    ]
-  },
-];
-let editRecetaId = null;
-let viewingRecetaId = null;
-let recCat = 'Todas';
-
-/* Tabla de conversión de unidades */
-const UNIT_CONV = {
-  // base unidad compra → factor para convertir cantidad receta a unidad compra
-  // getConvFactor(unidadCompra, unidadReceta) → multiplier (cuántas unidades de compra usa)
-};
-
-function getConvFactor(unidadCompra, unidadReceta) {
-  const uc = unidadCompra.toLowerCase();
-  const ur = unidadReceta.toLowerCase();
-  if (uc === ur) return 1;
-  // Kg ↔ Gr
-  if (uc === 'kg' && ur === 'gr') return 1/1000;
-  if (uc === 'gr' && ur === 'kg') return 1000;
-  // Lt ↔ Ml
-  if (uc === 'lt' && ur === 'ml') return 1/1000;
-  if (uc === 'ml' && ur === 'lt') return 1000;
-  // Tapa → Pieza (1 tapa = 30 piezas)
-  if (uc === 'tapa' && (ur === 'pz' || ur === 'pieza')) return 1/30;
-  // Paquete → Pieza
-  if (uc === 'paquete' && (ur === 'pz' || ur === 'pieza')) return 1/12; // default 12 pzas/paquete
-  // Mismas dimensiones distintos nombres
-  if ((uc === 'pz' || uc === 'pieza') && (ur === 'pz' || ur === 'pieza')) return 1;
-  if ((uc === 'bolsa' || uc === 'botella' || uc === 'frasco' || uc === 'lata' || uc === 'rollo') &&
-      (ur === 'pz' || ur === 'pieza')) return 1;
-  return 1; // fallback: same unit
-}
-
-function calcCostoIngr(ingr) {
-  /* ingr: {tipo, refId, cant, unidad}
-     Retorna costo en $ */
-  if (ingr.tipo === 'sub') {
-    // Es una subreceta — buscar el costo por porción
-    const sub = recetas.find(r=>r.id===ingr.refId);
-    if (!sub) return 0;
-    return calcCostoReceta(sub).porcion * ingr.cant;
-  }
-  // Es ingrediente de compra
-  const ing = ingredientes.find(i=>i.id===ingr.refId);
-  if (!ing || !ing.precioCompra) return 0;
-  const factor = getConvFactor(ing.unidad, ingr.unidad);
-  // precioCompra es por 1 unidad de compra
-  // factor convierte cant_receta → cant_compra
-  return ing.precioCompra * ingr.cant * factor;
-}
-
-function calcCostoReceta(receta) {
-  const total = receta.ingredientes.reduce((s, i) => s + calcCostoIngr(i), 0);
-  const rinde = receta.rinde || 1;
-  return { total, porcion: total / rinde };
-}
-
-/* ── Render receta cards ── */
-let recCatFilter = 'Todas';
-
-function renderRecetasCatTabs() {
-  document.getElementById('rtabs').innerHTML = ['Todas','Subrecetas','Recetas'].map(c=>
-    `<button class="ictab ${c===recCatFilter?'on':''}" onclick="recCatFilter='${c}';renderRecetas()">${c}</button>`
-  ).join('');
+function delProd2(id){
+  produccion=produccion.filter(x=>x.id!==id);
+  // ── FIREBASE ──
+  if (window._fbPatchDelProd2) window._fbPatchDelProd2(id);
+  renderProdCards();renderInvProdCatTabs();
 }

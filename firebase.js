@@ -444,4 +444,6 @@ window._fbPatchDelProv     = async (id) => { await eliminarProveedor(id); };
 window._fbPatchSaveBiz     = async ()   => { await guardarConfig(); };
 
 /* ── INICIAR CUANDO TODO ESTÉ LISTO ── */
-window.addEventListener('load', initFirebase);
+window.addEventListener('load', () => {
+  initFirebase();
+});

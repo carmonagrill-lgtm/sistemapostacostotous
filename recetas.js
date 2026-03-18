@@ -1,7 +1,6 @@
 /* -- Recetas y Costos -- */
 
 function renderRecetasView() {
-  // Update KPIs
   const kpiT = document.getElementById('rec-kpi-total');
   const kpiS = document.getElementById('rec-kpi-sub');
   const kpiR = document.getElementById('rec-kpi-rec');
@@ -9,7 +8,6 @@ function renderRecetasView() {
   if (kpiS) kpiS.textContent = recetas.filter(r=>r.tipo==='subreceta').length;
   if (kpiR) kpiR.textContent = recetas.filter(r=>r.tipo==='receta').length;
 
-  // Category tabs — only 3 fixed options
   const tabsEl = document.getElementById('rtabs-v');
   if (tabsEl) {
     tabsEl.innerHTML = ['Todas','Subrecetas','Recetas'].map(c=>
@@ -17,7 +15,6 @@ function renderRecetasView() {
     ).join('');
   }
 
-  // Filter list
   let list = recetas;
   if (recCatFilter==='Subrecetas') list = recetas.filter(r=>r.tipo==='subreceta');
   else if (recCatFilter==='Recetas') list = recetas.filter(r=>r.tipo==='receta');
@@ -94,7 +91,6 @@ function renderRecetas() {
   }).join('');
 }
 
-/* ── Ver detalle ── */
 function verReceta(id) {
   const r = recetas.find(x=>x.id===id); if(!r) return;
   viewingRecetaId = id;
@@ -134,8 +130,7 @@ function editRecetaFromView() {
   editReceta(viewingRecetaId);
 }
 
-/* ── Formulario de receta ── */
-let recIngrRows = []; // {tipo, refId, nombre, cant, unidad}
+let recIngrRows = [];
 
 function openAddReceta() {
   editRecetaId = null;
@@ -168,6 +163,8 @@ function editReceta(id) {
 
 function delReceta(id) {
   recetas = recetas.filter(x=>x.id!==id);
+  // ── FIREBASE ──
+  if (window._fbPatchDelReceta) window._fbPatchDelReceta(id);
   renderRecetas();
 }
 
@@ -192,15 +189,11 @@ function getUnitsForIngr(unidadCompra) {
 }
 
 function renderRecIngrRows() {
-  // Build ingredient options: all ingredientes + subrecetas
   const ingrOpts = ingredientes.map(i=>`<option value="ingr:${i.id}">${i.nombre} (${i.unidad})</option>`).join('');
   const subOpts  = recetas.filter(r=>r.tipo==='subreceta').map(r=>`<option value="sub:${r.id}">🔗 ${r.nombre} (Orden)</option>`).join('');
 
   document.getElementById('rec-ingr-list').innerHTML = recIngrRows.map((row, idx) => {
-    // Current selected value
     const selVal = row.tipo+':'+row.refId;
-
-    // Unit options based on ingredient
     let unitOpts = '';
     if (row.tipo==='ingr') {
       const ing = ingredientes.find(i=>i.id===row.refId);
@@ -221,7 +214,6 @@ function renderRecIngrRows() {
     </div>`;
   }).join('');
 
-  // Set select values after render
   recIngrRows.forEach((row,idx)=>{
     const sel = document.getElementById('rec-ingr-list')?.querySelectorAll('.ri-sel')[idx];
     if(sel) sel.value = row.tipo+':'+row.refId;
@@ -287,7 +279,14 @@ function saveReceta() {
     const nid = recetas.length ? Math.max(...recetas.map(r=>r.id))+1 : 1;
     recetas.push({id:nid, ...data});
   }
+  // ── FIREBASE ──
+  const recGuardar = editRecetaId ? recetas.find(r=>r.id===editRecetaId) : recetas[recetas.length-1];
+  if (window._fbPatchSaveReceta) window._fbPatchSaveReceta(recGuardar);
   closeM('mReceta');
+  renderRecetas();
+  renderRecetasView();
+}
+
   renderRecetas();
   renderRecetasView();
 }

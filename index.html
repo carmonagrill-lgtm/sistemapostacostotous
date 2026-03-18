@@ -1292,24 +1292,22 @@ canvas#pieChart{display:block;}
   </div>
 </div>
 
-<!-- Módulos JS — orden de carga es importante -->
-  <script src="productos.js"></script>
-  <script src="usuarios.js"></script>
-  <script src="ventas.js"></script>
-  <script src="inventario.js"></script>
-  <script src="recetas.js"></script>
-  <script src="dashboard.js"></script>
-  <script src="cocina.js"></script>
-  <script src="personal.js"></script>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <!-- Firebase integration (reemplaza config.js) -->
-  <script src="firebase.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<!-- 🔥 1. FIREBASE PRIMERO -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="firebase.js"></script>
-  <script src="app.js"></script>
 
-</body>
-</html>
+<!-- 🔥 2. TU CONFIG -->
+<script src="firebase.js"></script>
+
+<!-- 🔥 3. TU SISTEMA -->
+<script src="productos.js"></script>
+<script src="usuarios.js"></script>
+<script src="ventas.js"></script>
+<script src="inventario.js"></script>
+<script src="recetas.js"></script>
+<script src="dashboard.js"></script>
+<script src="cocina.js"></script>
+<script src="personal.js"></script>
+
+<!-- 🔥 4. APP FINAL -->
+<script src="app.js"></script>

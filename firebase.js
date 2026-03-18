@@ -705,8 +705,4 @@ async function syncTodoFirebase() {
 
 // ── 21. INICIAR FIREBASE AL CARGAR LA PÁGINA ──────────────────
 // Se llama automáticamente cuando el DOM está listo
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initFirebase);
-} else {
-  initFirebase();
-}
+window.addEventListener('load', initFirebase);

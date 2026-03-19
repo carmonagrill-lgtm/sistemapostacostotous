@@ -1,6 +1,7 @@
 /* -- Recetas y Costos -- */
 
 function renderRecetasView() {
+  // Update KPIs
   const kpiT = document.getElementById('rec-kpi-total');
   const kpiS = document.getElementById('rec-kpi-sub');
   const kpiR = document.getElementById('rec-kpi-rec');
@@ -8,13 +9,15 @@ function renderRecetasView() {
   if (kpiS) kpiS.textContent = recetas.filter(r=>r.tipo==='subreceta').length;
   if (kpiR) kpiR.textContent = recetas.filter(r=>r.tipo==='receta').length;
 
+  // Category tabs — only 3 fixed options
   const tabsEl = document.getElementById('rtabs-v');
   if (tabsEl) {
     tabsEl.innerHTML = ['Todas','Subrecetas','Recetas'].map(c=>
-      `<button class="ictab ${c===recCatFilter?'on':''}" onclick="recCatFilter='${c}';renderRecetasView()">${c}</button>`
+      `<button class="ictab ${c===recCatFilter?'on':''}" onclick="recCatFilter='${c}';renderRecetasView();updateRecBtnLabel()">${c}</button>`
     ).join('');
   }
 
+  // Filter list
   let list = recetas;
   if (recCatFilter==='Subrecetas') list = recetas.filter(r=>r.tipo==='subreceta');
   else if (recCatFilter==='Recetas') list = recetas.filter(r=>r.tipo==='receta');
@@ -91,6 +94,7 @@ function renderRecetas() {
   }).join('');
 }
 
+/* ── Ver detalle ── */
 function verReceta(id) {
   const r = recetas.find(x=>x.id===id); if(!r) return;
   viewingRecetaId = id;
@@ -130,16 +134,63 @@ function editRecetaFromView() {
   editReceta(viewingRecetaId);
 }
 
-let recIngrRows = [];
+/* ── Formulario de receta ── */
+let recIngrRows = []; // {tipo, refId, nombre, cant, unidad}
+
+function updateRecBtnLabel() {
+  const btn = document.getElementById('btn-nueva-receta');
+  if (!btn) return;
+  if (recCatFilter === 'Subrecetas') {
+    btn.textContent = '+ Nueva subreceta';
+  } else if (recCatFilter === 'Recetas') {
+    btn.textContent = '+ Nueva receta';
+  } else {
+    btn.textContent = '+ Nueva';
+  }
+}
+
+function fillRecCatSelect(selectedVal) {
+  const sel = document.getElementById('rec-notas');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Sin categoría —</option>' +
+    recetaCategorias.map(c=>`<option value="${c}" ${c===selectedVal?'selected':''}>${c}</option>`).join('');
+}
+
+function openAddRecCat() {
+  const nombre = prompt('Nueva categoría de receta:');
+  if (!nombre || !nombre.trim()) return;
+  const n = nombre.trim();
+  if (!recetaCategorias.includes(n)) recetaCategorias.push(n);
+  fillRecCatSelect(n);
+  document.getElementById('rec-notas').value = n;
+}
 
 function openAddReceta() {
   editRecetaId = null;
-  document.getElementById('mRecetaTtl').textContent = 'Nueva Receta';
+  // Determine tipo and title from current filter
+  const esSub = recCatFilter === 'Subrecetas';
+  const esRec = recCatFilter === 'Recetas';
+  const tipoDefault = esSub ? 'subreceta' : 'receta';
+
+  document.getElementById('mRecetaTtl').textContent = esSub ? 'Nueva Subreceta' : 'Nueva Receta';
   document.getElementById('rec-name').value = '';
-  document.getElementById('rec-tipo').value = 'receta';
   document.getElementById('rec-rinde').value = '1';
   document.getElementById('rec-rinde-unit').value = 'platillos';
-  document.getElementById('rec-notas').value = '';
+  fillRecCatSelect('');
+
+  // Set tipo and lock it if filter is specific
+  const tipoSel = document.getElementById('rec-tipo');
+  tipoSel.value = tipoDefault;
+  if (esSub || esRec) {
+    // Lock the selector so user can't change it from context
+    tipoSel.disabled = true;
+    tipoSel.style.opacity = '0.6';
+    tipoSel.title = esSub ? 'Creando desde sección Subrecetas' : 'Creando desde sección Recetas';
+  } else {
+    tipoSel.disabled = false;
+    tipoSel.style.opacity = '1';
+    tipoSel.title = '';
+  }
   recIngrRows = [];
   renderRecIngrRows();
   updateRecCostPreview();
@@ -149,12 +200,14 @@ function openAddReceta() {
 function editReceta(id) {
   const r = recetas.find(x=>x.id===id); if(!r) return;
   editRecetaId = id;
-  document.getElementById('mRecetaTtl').textContent = 'Editar Receta';
+  const tipoSel2 = document.getElementById('rec-tipo');
+  tipoSel2.disabled = false; tipoSel2.style.opacity = '1'; tipoSel2.title = '';
+  document.getElementById('mRecetaTtl').textContent = r.tipo==='subreceta' ? 'Editar Subreceta' : 'Editar Receta';
   document.getElementById('rec-name').value  = r.nombre;
-  document.getElementById('rec-tipo').value  = r.tipo;
+  tipoSel2.value = r.tipo;
   document.getElementById('rec-rinde').value = r.rinde;
   document.getElementById('rec-rinde-unit').value = r.rindeUnit||'platillos';
-  document.getElementById('rec-notas').value = r.notas||'';
+  fillRecCatSelect(r.notas||'');
   recIngrRows = r.ingredientes.map(i=>({...i}));
   renderRecIngrRows();
   updateRecCostPreview();
@@ -163,13 +216,18 @@ function editReceta(id) {
 
 function delReceta(id) {
   recetas = recetas.filter(x=>x.id!==id);
-  // ── FIREBASE ──
-  if (window._fbPatchDelReceta) window._fbPatchDelReceta(id);
   renderRecetas();
 }
 
 function addRecetaIngr() {
-  recIngrRows.push({tipo:'ingr', refId:ingredientes[0]?.id||0, nombre:ingredientes[0]?.nombre||'', cant:0, unidad:'Gr'});
+  const first = ingredientes[0];
+  recIngrRows.push({
+    tipo:'ingr',
+    refId: first?.id||0,
+    nombre: first?.nombre||'',
+    cant:0, unidad:'Gr',
+    _source:'ingr', _cat:'Todas'
+  });
   renderRecIngrRows();
   updateRecCostPreview();
 }
@@ -188,49 +246,161 @@ function getUnitsForIngr(unidadCompra) {
   return [unidadCompra||'Pz','Pz','Pieza'];
 }
 
-function renderRecIngrRows() {
-  const ingrOpts = ingredientes.map(i=>`<option value="ingr:${i.id}">${i.nombre} (${i.unidad})</option>`).join('');
-  const subOpts  = recetas.filter(r=>r.tipo==='subreceta').map(r=>`<option value="sub:${r.id}">🔗 ${r.nombre} (Orden)</option>`).join('');
+function getIngrCats() {
+  // All categories from ingredientes + produccion + subrecetas
+  const cats = [
+    ...new Set(ingredientes.map(i=>i.cat)),
+  ];
+  return cats;
+}
 
-  document.getElementById('rec-ingr-list').innerHTML = recIngrRows.map((row, idx) => {
-    const selVal = row.tipo+':'+row.refId;
+function getProdCats() {
+  return [...new Set(produccion.map(p=>p.cat))];
+}
+
+function buildIngrItemsForCat(source, cat) {
+  if (source === 'ingr') {
+    return ingredientes
+      .filter(i => cat==='Todas' || i.cat===cat)
+      .map(i => ({value:'ingr:'+i.id, label:i.nombre, unidad:i.unidad}));
+  } else {
+    // sub — category doesn't apply, show all subrecetas
+    return recetas
+      .filter(r => r.tipo==='subreceta')
+      .map(r => ({value:'sub:'+r.id, label:r.nombre, unidad:'Orden'}));
+  }
+}
+
+function renderRecIngrRows() {
+  const listEl = document.getElementById('rec-ingr-list');
+  if (!listEl) return;
+
+  listEl.innerHTML = recIngrRows.map((row, idx) => {
+    // Source selector
+    const source = row._source || (row.tipo==='sub' ? 'sub' : row.tipo==='prod' ? 'prod' : 'ingr');
+
+    // Category selector for current source
+    let catOpts = '';
+    if (source === 'ingr') {
+      const cats = ['Todas', ...new Set(ingredientes.map(i=>i.cat))];
+      catOpts = cats.map(c=>`<option value="${c}" ${c===(row._cat||'Todas')?'selected':''}>${c}</option>`).join('');
+    } else if (source === 'prod') {
+      const cats = ['Todas', ...new Set(produccion.map(p=>p.cat))];
+      catOpts = cats.map(c=>`<option value="${c}" ${c===(row._cat||'Todas')?'selected':''}>${c}</option>`).join('');
+    } else {
+      catOpts = '<option value="Todas">Todas</option>';
+    }
+
+    // Item selector filtered by category
+    const currentCat = row._cat || 'Todas';
+    const items = buildIngrItemsForCat(source, currentCat);
+    const currentVal = row.tipo+':'+(row.refId||0);
+    const itemOpts = items.map(it=>`<option value="${it.value}" ${it.value===currentVal?'selected':''}>${it.label}</option>`).join('');
+
+    // Unit options
     let unitOpts = '';
-    if (row.tipo==='ingr') {
+    if (row.tipo === 'ingr') {
       const ing = ingredientes.find(i=>i.id===row.refId);
       const units = ing ? getUnitsForIngr(ing.unidad) : ['Pz'];
       unitOpts = [...new Set(units)].map(u=>`<option value="${u}" ${u===row.unidad?'selected':''}>${u}</option>`).join('');
     } else {
-      unitOpts = `<option value="Orden">Orden</option>`;
+      unitOpts = '<option value="Orden">Orden</option>';
     }
 
-    return `<div class="ri-row" style="margin-bottom:4px;">
-      <select class="ri-sel" onchange="updateRecIngrRef(${idx},this.value)">
-        <optgroup label="Ingredientes">${ingrOpts}</optgroup>
-        ${subOpts?`<optgroup label="Subrecetas">${subOpts}</optgroup>`:''}
-      </select>
-      <input class="ri-num" type="number" inputmode="decimal" value="${row.cant||''}" placeholder="Cant." oninput="updateRecIngrCant(${idx},this.value)">
-      <select class="ri-unit" onchange="updateRecIngrUnit(${idx},this.value)">${unitOpts}</select>
-      <button class="ri-del" onclick="removeRecIngrRow(${idx})">✕</button>
+    return `<div style="background:var(--c-surf2);border:1.5px solid var(--c-bord);border-radius:var(--rs);padding:10px;margin-bottom:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+        <!-- Fuente -->
+        <div>
+          <div style="font-size:9px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px;">Fuente</div>
+          <select class="ri-sel" onchange="updateRecIngrSource(${idx},this.value)">
+            <option value="ingr" ${source==='ingr'?'selected':''}>Ingredientes</option>
+            <option value="sub"  ${source==='sub' ?'selected':''}>Subreceta</option>
+          </select>
+        </div>
+        <!-- Categoría — solo visible para Ingredientes -->
+        <div style="${source==='sub'?'visibility:hidden':''}">
+          <div style="font-size:9px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px;">Categoría</div>
+          <select class="ri-sel" onchange="updateRecIngrCat(${idx},this.value)" ${source==='sub'?'disabled':''}>
+            ${catOpts}
+          </select>
+        </div>
+      </div>
+      <!-- Ingrediente -->
+      <div style="margin-bottom:6px;">
+        <div style="font-size:9px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px;">Ingrediente / Producto</div>
+        <select class="ri-sel ri-item-sel" style="width:100%;" onchange="updateRecIngrRef(${idx},this.value)">
+          ${itemOpts || '<option value="">— Selecciona —</option>'}
+        </select>
+      </div>
+      <!-- Cantidad y unidad -->
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;">
+        <div>
+          <div style="font-size:9px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px;">Cantidad</div>
+          <input class="ri-num" style="width:100%;" type="number" inputmode="decimal" value="${row.cant||''}" placeholder="0" oninput="updateRecIngrCant(${idx},this.value)">
+        </div>
+        <div>
+          <div style="font-size:9px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px;">Unidad</div>
+          <select class="ri-unit" style="width:100%;" onchange="updateRecIngrUnit(${idx},this.value)">${unitOpts}</select>
+        </div>
+        <button class="ri-del" onclick="removeRecIngrRow(${idx})" style="margin-top:18px;">✕</button>
+      </div>
     </div>`;
   }).join('');
+}
 
-  recIngrRows.forEach((row,idx)=>{
-    const sel = document.getElementById('rec-ingr-list')?.querySelectorAll('.ri-sel')[idx];
-    if(sel) sel.value = row.tipo+':'+row.refId;
-  });
+function updateRecIngrSource(idx, source) {
+  recIngrRows[idx]._source = source;
+  recIngrRows[idx]._cat = 'Todas';
+  if (source === 'ingr') {
+    const first = ingredientes[0];
+    if (first) {
+      recIngrRows[idx].tipo   = 'ingr';
+      recIngrRows[idx].refId  = first.id;
+      recIngrRows[idx].nombre = first.nombre;
+      recIngrRows[idx].unidad = getUnitsForIngr(first.unidad)[0];
+    }
+  } else {
+    // sub
+    const first = recetas.find(r=>r.tipo==='subreceta');
+    if (first) {
+      recIngrRows[idx].tipo   = 'sub';
+      recIngrRows[idx].refId  = first.id;
+      recIngrRows[idx].nombre = first.nombre;
+      recIngrRows[idx].unidad = 'Orden';
+    }
+  }
+  renderRecIngrRows();
+  updateRecCostPreview();
+}
+
+function updateRecIngrCat(idx, cat) {
+  recIngrRows[idx]._cat = cat;
+  const source = recIngrRows[idx]._source || 'ingr';
+  const items = buildIngrItemsForCat(source, cat);
+  if (items.length > 0) {
+    const [tipo, id] = items[0].value.split(':');
+    recIngrRows[idx].tipo  = tipo;
+    recIngrRows[idx].refId = parseInt(id);
+    recIngrRows[idx].nombre = items[0].label.replace('🔗 ','');
+    recIngrRows[idx].unidad = items[0].unidad || 'Pz';
+  }
+  renderRecIngrRows();
+  updateRecCostPreview();
 }
 
 function updateRecIngrRef(idx, val) {
+  if (!val || !val.includes(':')) return;
   const [tipo, id] = val.split(':');
   const refId = parseInt(id);
   recIngrRows[idx].tipo  = tipo;
   recIngrRows[idx].refId = refId;
-  if (tipo==='ingr') {
+  if (tipo === 'ingr') {
     const ing = ingredientes.find(i=>i.id===refId);
     recIngrRows[idx].nombre = ing?.nombre||'';
     const units = ing ? getUnitsForIngr(ing.unidad) : ['Pz'];
     recIngrRows[idx].unidad = units[0];
   } else {
+    // sub
     const sub = recetas.find(r=>r.id===refId);
     recIngrRows[idx].nombre = sub?.nombre||'';
     recIngrRows[idx].unidad = 'Orden';
@@ -279,9 +449,6 @@ function saveReceta() {
     const nid = recetas.length ? Math.max(...recetas.map(r=>r.id))+1 : 1;
     recetas.push({id:nid, ...data});
   }
-  // ── FIREBASE ──
-  const recGuardar = editRecetaId ? recetas.find(r=>r.id===editRecetaId) : recetas[recetas.length-1];
-  if (window._fbPatchSaveReceta) window._fbPatchSaveReceta(recGuardar);
   closeM('mReceta');
   renderRecetas();
   renderRecetasView();

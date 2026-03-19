@@ -8,7 +8,6 @@ function renderStaff() {
     ? staff.map(s=>`<div class="scard"><div class="sav ${ac[s.role]||'sav-cajero'}">${s.name.charAt(0).toUpperCase()}</div><div class="sinf"><div class="sname">${s.name}</div><div class="srole ${rc[s.role]||'sr-cajero'}">${rl[s.role]||s.role}</div><div class="susr">@${s.user}</div><span class="sst ${s.status==='activo'?'ston':'stoff'}">${s.status==='activo'?'● Activo':'○ Inactivo'}</span></div><div class="sacts"><button class="ied" onclick="editStaff(${s.id})">✏️ Editar</button><button class="idl" onclick="delStaff(${s.id})">🗑️ Borrar</button></div></div>`).join('')
     : '<div style="text-align:center;color:var(--c-tx3);padding:40px 0;font-size:14px;font-weight:700;">Sin personal registrado</div>';
 }
-
 /* ══ LOGIN EDITOR ══ */
 let loginEditId = null;
 
@@ -94,9 +93,6 @@ function saveLoginUser() {
     const nid = staff.length > 0 ? Math.max(...staff.map(s=>s.id))+1 : 1;
     staff.push({id:nid, name, user, pass, role, status});
   }
-  // ── FIREBASE ──
-  const loginGuardar = loginEditId ? staff.find(s=>s.id===loginEditId) : staff[staff.length-1];
-  if (window._fbPatchSaveStaff) window._fbPatchSaveStaff(loginGuardar);
   backToEditor();
 }
 
@@ -104,8 +100,6 @@ function deleteLoginUser(id) {
   const s = staff.find(x=>x.id===id);
   if (!s || !confirm(`¿Borrar a "${s.name}"?`)) return;
   staff = staff.filter(x=>x.id!==id);
-  // ── FIREBASE ──
-  if (window._fbPatchDelStaff) window._fbPatchDelStaff(id);
   renderLoginEditor();
 }
 
@@ -163,22 +157,16 @@ function saveStaff() {
   if (staff.find(s=>s.user===user&&s.id!==editStaffId)) { alert(`El usuario "@${user}" ya existe.`); return; }
   if (editStaffId) { const i=staff.findIndex(s=>s.id===editStaffId); staff[i]={...staff[i],name,user,pass,role,status}; }
   else { const nid=staff.length>0?Math.max(...staff.map(s=>s.id))+1:1; staff.push({id:nid,name,user,pass,role,status}); }
-  // ── FIREBASE ──
-  const staffGuardar = editStaffId ? staff.find(s=>s.id===editStaffId) : staff[staff.length-1];
-  if (window._fbPatchSaveStaff) window._fbPatchSaveStaff(staffGuardar);
   closeM('mStaff'); renderStaff();
 }
 function delStaff(id) {
   const s=staff.find(x=>x.id===id); if(!s||!confirm(`¿Borrar a "${s.name}"?`)) return;
-  staff=staff.filter(x=>x.id!==id);
-  // ── FIREBASE ──
-  if (window._fbPatchDelStaff) window._fbPatchDelStaff(id);
-  renderStaff();
+  staff=staff.filter(x=>x.id!==id); renderStaff();
 }
 
 /* ══ CONFIG ══ */
 /* ══ PRODUCCIONES ══ */
-let prodLogs = [];
+let prodLogs = []; // [{id,fecha,productoId,nombre,cat,cant,unidad,quien,notas,sincronizado,recetaId}]
 let prodFilter = 'hoy';
 let plSelectedId = null;
 
@@ -190,6 +178,7 @@ const CAT_COLORS_PROD = {
   'Salsas':'#008040','Guisos':'#E85500','Almuerzos':'#F0A000',
   'Bebidas':'#0066BB','Bebidas Prep':'#0066BB','Porciones':'#6B31D6'
 };
+
 
 /* -- Empleados -- */
 
@@ -287,9 +276,6 @@ function saveEmp() {
     const nid = empleados.length ? Math.max(...empleados.map(e=>e.id))+1 : 1;
     empleados.push({id:nid, ...data});
   }
-  // ── FIREBASE ──
-  const empGuardar = editEmpId ? empleados.find(e=>e.id===editEmpId) : empleados[empleados.length-1];
-  if (window._fbPatchSaveEmp) window._fbPatchSaveEmp(empGuardar);
   closeM('mEmp'); renderEmpleados();
 }
 
@@ -307,8 +293,6 @@ function confirmBaja() {
   e.status  = 'inactivo';
   e.fechaOut = todayStr();
   e.motivo  = motivoMap[document.getElementById('bajaMotivo').value]||'Baja';
-  // ── FIREBASE ──
-  if (window._fbPatchSaveEmp) window._fbPatchSaveEmp(e);
   closeM('mBaja'); renderEmpleados();
 }
 
@@ -317,9 +301,7 @@ function reactivarEmp(id) {
   e.status   = 'activo';
   e.fechaOut = null;
   e.motivo   = null;
-  e.fechaIn  = todayStr();
-  // ── FIREBASE ──
-  if (window._fbPatchSaveEmp) window._fbPatchSaveEmp(e);
+  e.fechaIn  = todayStr(); // nueva fecha de reingreso
   renderEmpleados();
 }
 
@@ -327,8 +309,10 @@ function cerrarSesion() {
   currentUser = null;
   document.getElementById('userPill').style.display = 'none';
   document.getElementById('userPillName').textContent = '—';
+  // Reset owner-only visibility
   document.querySelectorAll('.owner-only').forEach(el => el.classList.remove('vis'));
   const locked = document.getElementById('kpi-locked');
   if (locked) locked.style.display = 'block';
+  // Go back to login
   showLogin();
 }

@@ -12,8 +12,8 @@ let editStaffId = null;
 let perUnlocked = false;
 
 /* Productos asignados a Beto automáticamente */
-const BETO_CATS = ['Almuerzos'];
-const BETO_IDS  = [23, 22, 24]; // Café, Agua Natural, Lipton
+const BETO_CATS = ['Almuerzos','Bebidas Preparadas'];
+const BETO_IDS  = [22, 24]; // Agua Natural, Lipton (embotelladas de Beto)
 
 function getAutoOwner(items) {
   if (!items || items.length === 0) return 'alex';

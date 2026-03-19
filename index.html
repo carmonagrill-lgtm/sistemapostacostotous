@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#1a0a00">
 <title>Tacos Totous</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 
@@ -149,6 +152,27 @@ body{font-family:'Nunito',sans-serif;background:var(--c-bg);color:var(--c-tx);di
 /* CART SCROLL WRAPPER */
 .cart-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;display:flex;flex-direction:column;}
 .cart-scroll-inner{display:flex;flex-direction:column;min-height:100%;}
+/* PRODUCCION TIPO BUTTONS */
+.pl-tipo-btn{padding:10px;border-radius:var(--rs);font-size:12px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;border:2px solid var(--c-bord);background:var(--c-surf2);color:var(--c-tx2);transition:all .15s;text-align:center;}
+.pl-tipo-btn.on{border-color:var(--c-or);background:rgba(232,85,0,.08);color:var(--c-or);}
+.pl-tipo-btn:active{transform:scale(.95);}
+/* CATÁLOGO DE VENTAS */
+#v-cat{background:var(--c-bg);min-height:0;}
+.cat-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+.cat-pad{padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:calc(20px + var(--sb));}
+.pvcard{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);padding:13px 14px;display:flex;align-items:center;gap:12px;box-shadow:var(--sh1);margin-bottom:8px;}
+.pvcard-ico{font-size:24px;flex-shrink:0;}
+.pvcard-inf{flex:1;min-width:0;}
+.pvcard-name{font-size:14px;font-weight:900;color:var(--c-tx);}
+.pvcard-meta{display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap;}
+.pvcard-tipo{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;}
+.ptipo-platillo{background:rgba(232,85,0,.1);color:var(--c-or);}
+.ptipo-reventa{background:rgba(0,102,187,.1);color:var(--c-bl);}
+.pvcard-rec{font-size:10px;color:var(--c-pu);font-weight:700;background:rgba(107,49,214,.08);padding:2px 8px;border-radius:20px;}
+.pvcard-norec{font-size:10px;color:var(--c-tx3);font-weight:600;}
+.pvcard-price{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--c-or);flex-shrink:0;}
+/* Stock warning badge in menu */
+.pcard-lo-warn{position:absolute;top:8px;right:8px;font-size:9px;font-weight:900;background:rgba(212,0,30,.15);color:var(--c-re);padding:2px 7px;border-radius:20px;}
 /* RECETAS VIEW */
 #v-rec{background:var(--c-bg);min-height:0;}
 .rec-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
@@ -571,6 +595,7 @@ canvas#pieChart{display:block;}
     <button class="tnav" onclick="go('dash',this)">📊 Panel</button>
     <button class="tnav on" onclick="go('pos',this)">🌮 Venta</button>
     <button class="tnav" onclick="go('coc',this)">👨‍🍳 Cocina</button>
+    <button class="tnav" onclick="go('cat',this)">🏷 Catálogo</button>
     <button class="tnav" onclick="go('inv',this)">📦 Inventario</button>
     <button class="tnav" onclick="go('comp',this)">🛒 Compras</button>
     <button class="tnav" onclick="go('prod',this)">🍳 Producción</button>
@@ -846,7 +871,7 @@ canvas#pieChart{display:block;}
       <div class="inv-pad">
         <div class="sec-hdr">
           <div><div class="sec-ttl">Recetas</div><div class="sec-sub">Costo por platillo · calculado automáticamente</div></div>
-          <button class="btn-add" onclick="openAddReceta()">+ Nueva receta</button>
+          <button class="btn-add" onclick="openAddReceta()">+ Nueva</button>
         </div>
         <!-- Tipo de receta tabs -->
         <div class="icat-tabs" id="rtabs"></div>
@@ -868,7 +893,7 @@ canvas#pieChart{display:block;}
           <div class="sec-ttl">Recetas</div>
           <div style="font-size:12px;color:var(--c-tx2);font-weight:600;margin-top:1px;">Subrecetas y recetas finales · costo automático</div>
         </div>
-        <button class="btn-add" onclick="openAddReceta()">+ Nueva</button>
+        <button class="btn-add" id="btn-nueva-receta" onclick="openAddReceta()">+ Nueva</button>
       </div>
 
       <!-- KPIs rápidos -->
@@ -942,6 +967,7 @@ canvas#pieChart{display:block;}
         <div class="kpi"><span class="kpi-ico">🍳</span><div class="kpi-lbl">Hoy</div><div class="kpi-v" id="pl-hoy-n">0</div><div class="kpi-s">producciones</div></div>
         <div class="kpi"><span class="kpi-ico">🫙</span><div class="kpi-lbl">Salsas</div><div class="kpi-v" id="pl-hoy-s">0</div><div class="kpi-s">lotes</div></div>
         <div class="kpi"><span class="kpi-ico">🥩</span><div class="kpi-lbl">Guisos</div><div class="kpi-v" id="pl-hoy-g">0</div><div class="kpi-s">lotes</div></div>
+        <div class="kpi" style="grid-column:1/-1;"><span class="kpi-ico">⚖</span><div class="kpi-lbl">Porcionados</div><div class="kpi-v" id="pl-hoy-p">0</div><div class="kpi-s">procesos</div></div>
       </div>
 
       <!-- Filtro -->
@@ -955,6 +981,43 @@ canvas#pieChart{display:block;}
         <div class="comp-empty">Sin producciones registradas.<br>Toca <strong>+ Registrar</strong> para empezar.</div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- CATÁLOGO DE VENTAS -->
+<div class="view" id="v-cat">
+  <div class="cat-scroll">
+    <div class="cat-pad">
+      <div class="sec-hdr">
+        <div>
+          <div class="sec-ttl">Catálogo</div>
+          <div style="font-size:12px;color:var(--c-tx2);font-weight:600;margin-top:1px;">Platillos y productos de venta · editable</div>
+        </div>
+        <button class="btn-add" onclick="openAddProduct()">+ Agregar</button>
+      </div>
+
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div class="kpi"><span class="kpi-ico">🍽</span><div class="kpi-lbl">Platillos</div><div class="kpi-v" id="cat-kpi-p">0</div><div class="kpi-s">con receta</div></div>
+        <div class="kpi"><span class="kpi-ico">🛍</span><div class="kpi-lbl">Reventa</div><div class="kpi-v" id="cat-kpi-r">0</div><div class="kpi-s">sin receta</div></div>
+        <div class="kpi"><span class="kpi-ico">⚠️</span><div class="kpi-lbl">Sin receta</div><div class="kpi-v" id="cat-kpi-nr" style="color:var(--c-ye);">0</div><div class="kpi-s">platillos</div></div>
+      </div>
+
+      <!-- Gestión de categorías -->
+      <div class="dsec">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="dsec-title" style="margin-bottom:0;">📂 Categorías del Menú</div>
+          <button class="btn-add" style="font-size:11px;padding:7px 12px;" onclick="openAddCat()">+ Cat.</button>
+        </div>
+        <div id="cat-cats-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+
+      <!-- Filtro por categoría -->
+      <div class="icat-tabs" id="cat-tabs"></div>
+
+      <!-- Lista de productos -->
+      <div id="cat-prod-list"></div>
     </div>
   </div>
 </div>
@@ -1083,6 +1146,7 @@ canvas#pieChart{display:block;}
   <button class="bnt" id="bn-dash" onclick="go('dash',this)"><span class="bi">📊</span>Panel</button>
   <button class="bnt on" id="bn-pos" onclick="go('pos',this)"><span class="bi">🌮</span>Venta</button>
   <button class="bnt" id="bn-coc" onclick="go('coc',this)"><span class="bi">👨‍🍳</span>Cocina</button>
+  <button class="bnt" id="bn-cat" onclick="go('cat',this)"><span class="bi">🏷</span>Catálogo</button>
   <button class="bnt" id="bn-inv" onclick="go('inv',this)"><span class="bi">📦</span>Inventario</button>
   <button class="bnt" id="bn-comp" onclick="go('comp',this)"><span class="bi">🛒</span>Compras</button>
   <button class="bnt" id="bn-prod" onclick="go('prod',this)"><span class="bi">🍳</span>Producción</button>
@@ -1292,22 +1356,17 @@ canvas#pieChart{display:block;}
   </div>
 </div>
 
-<!-- 🔥 1. FIREBASE PRIMERO -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Modulos JS - orden importante -->
+  <script src="productos.js"></script>
+  <script src="usuarios.js"></script>
+  <script src="ventas.js"></script>
+  <script src="inventario.js"></script>
+  <script src="recetas.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="cocina.js"></script>
+  <script src="personal.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
 
-<!-- 🔥 2. TU CONFIG -->
-<script src="firebase.js"></script>
-
-<!-- 🔥 3. TU SISTEMA -->
-<script src="productos.js"></script>
-<script src="usuarios.js"></script>
-<script src="ventas.js"></script>
-<script src="inventario.js"></script>
-<script src="recetas.js"></script>
-<script src="dashboard.js"></script>
-<script src="cocina.js"></script>
-<script src="personal.js"></script>
-
-<!-- 🔥 4. APP FINAL -->
-<script src="app.js"></script>
+</body>
+</html>

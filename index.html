@@ -618,10 +618,55 @@ canvas#pieChart{display:block;}
 <div class="view" id="v-dash">
   <div class="dscroll">
     <div class="dpad">
+      <!-- HOY -->
       <div class="dash-hero">
-        <div class="dash-hero-lbl">Total acumulado de ventas</div>
+        <div class="dash-hero-lbl">Total del dia de hoy</div>
         <div class="dash-hero-val" id="d-total">$0</div>
-        <div class="dash-hero-sub" id="d-cmd">0 comandas totales</div>
+        <div class="dash-hero-sub" id="d-cmd">0 ordenes de hoy</div>
+      </div>
+
+      <!-- BUSCADOR POR RANGO DE FECHAS -->
+      <div class="dsec" style="padding:16px;">
+        <div class="dsec-title" style="margin-bottom:12px;">Consultar por periodo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:10px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px;">Desde</div>
+            <input type="date" class="mi" id="dash-desde" style="font-size:13px;padding:10px;" onchange="renderDashRango()">
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px;">Hasta</div>
+            <input type="date" class="mi" id="dash-hasta" style="font-size:13px;padding:10px;" onchange="renderDashRango()">
+          </div>
+        </div>
+        <!-- Accesos rapidos de periodo -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="ictab" onclick="setDashPeriodo('hoy')">Hoy</button>
+          <button class="ictab" onclick="setDashPeriodo('ayer')">Ayer</button>
+          <button class="ictab" onclick="setDashPeriodo('semana')">Esta semana</button>
+          <button class="ictab" onclick="setDashPeriodo('mes')">Este mes</button>
+          <button class="ictab" onclick="setDashPeriodo('todo')">Todo</button>
+        </div>
+        <!-- Resultado del rango -->
+        <div id="dash-rango-result" style="display:none;background:var(--c-surf2);border:1.5px solid var(--c-bord);border-radius:var(--rs);padding:14px;">
+          <div style="font-size:11px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:10px;" id="dash-rango-lbl">Periodo seleccionado</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div class="kpi" style="margin:0;"><div class="kpi-lbl">Total ventas</div><div class="kpi-v" id="dr-total" style="font-size:20px;">$0</div></div>
+            <div class="kpi" style="margin:0;"><div class="kpi-lbl">Ordenes</div><div class="kpi-v" id="dr-ordenes">0</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <div class="kpi" style="margin:0;"><div class="kpi-lbl">Tacos</div><div class="kpi-v" id="dr-tacos" style="font-size:16px;">0</div></div>
+            <div class="kpi" style="margin:0;"><div class="kpi-lbl">Bebidas</div><div class="kpi-v" id="dr-beb" style="font-size:16px;">0</div></div>
+            <div class="kpi" style="margin:0;"><div class="kpi-lbl">Almuerzos</div><div class="kpi-v" id="dr-alm" style="font-size:16px;">0</div></div>
+          </div>
+          <div class="owner-only" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--c-bord);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div class="kpi" style="margin:0;"><div class="kpi-lbl">Alex</div><div class="kpi-v" id="dr-alex" style="font-size:16px;color:var(--c-or);">$0</div></div>
+              <div class="kpi" style="margin:0;"><div class="kpi-lbl">Beto</div><div class="kpi-v" id="dr-beto" style="font-size:16px;color:var(--c-bl);">$0</div></div>
+            </div>
+          </div>
+          <!-- Desglose por dia dentro del rango -->
+          <div id="dr-dias" style="margin-top:10px;"></div>
+        </div>
       </div>
       <div class="kpi4">
         <div class="kpi"><span class="kpi-ico">🌮</span><div class="kpi-lbl">Tacos</div><div class="kpi-v" id="d-tacos">0</div><div class="kpi-s">piezas</div></div>
@@ -1701,7 +1746,7 @@ function go(name, btn) {
   if (name==='inv')   renderInvFull();
   if (name==='coc')   renderKDS();
   if (name==='per')   { /* lock screen shows by default */ }
-  if (name==='dash')  renderDash();
+  if (name==='dash')  { renderDash(); initDashDates(); }
   if (name==='cfg')    { renderEmpleados(); renderProvList(); }
   if (name==='comp')   renderCompras();
   if (name==='cat')    renderCatalogo();
@@ -4306,14 +4351,27 @@ function sessStats() {
    ██ DASHBOARD
    ════════════════════════════════════════════════════════════ */
 
+function initDashDates() {
+  const today = todayISO();
+  const desdeEl = document.getElementById('dash-desde');
+  const hastaEl = document.getElementById('dash-hasta');
+  if (desdeEl && !desdeEl.value) { desdeEl.value = today; hastaEl.value = today; renderDashRango(); }
+}
+
 function renderDash() {
   const h=calcH(), ss=sessStats();
+  // d-total shows TODAY only (txns = today's sales from Firebase)
+  const todayTotal   = txns.reduce((s,t)=>s+t.total, 0);
+  const todayOrdenes = txns.length;
+  const todayTacos   = ss.tacos;
+  const todayBeb     = ss.beb;
+  const todayAlm     = ss.alm;
   const total=h.total+ss.total, tacos=h.tacos+ss.tacos, beb=h.beb+ss.beb, alm=h.alm+ss.alm;
   const totalOrdenes = h.cmd + txns.length;
   const totalPlatos  = txns.reduce((s,t)=>s+t.packages.length,0);
 
-  document.getElementById('d-total').textContent   = '$'+total.toLocaleString('es-MX');
-  document.getElementById('d-cmd').textContent     = totalOrdenes+' órdenes totales';
+  document.getElementById('d-total').textContent   = '$'+todayTotal.toLocaleString('es-MX',{minimumFractionDigits:2});
+  document.getElementById('d-cmd').textContent     = todayOrdenes+' '+(todayOrdenes===1?'orden':'ordenes')+' de hoy';
   document.getElementById('d-tacos').textContent   = tacos;
   document.getElementById('d-beb').textContent     = beb;
   document.getElementById('d-ordenes').textContent = totalOrdenes;
@@ -4379,6 +4437,136 @@ function renderDash() {
   document.getElementById('e-beto-pct').textContent = (betoTotal/grandTotal*100).toFixed(1)+'%';
   // Historial
   document.getElementById('dDays').innerHTML = histDays.map(d=>`<div class="dday"><div class="dday-d">${d.fecha}</div><span class="dday-b">${d.cmd} cmd</span><div class="dday-t">$${d.total.toLocaleString('es-MX')}</div></div>`).join('');
+}
+
+/* ── Buscador por rango de fechas ── */
+function setDashPeriodo(periodo) {
+  const today = todayISO();
+  const dt = new Date(today + 'T12:00:00');
+  let desde = today, hasta = today;
+
+  if (periodo === 'ayer') {
+    const ay = new Date(dt); ay.setDate(ay.getDate()-1);
+    desde = hasta = ay.toISOString().split('T')[0];
+  } else if (periodo === 'semana') {
+    const lun = new Date(dt);
+    lun.setDate(lun.getDate() - (lun.getDay()===0 ? 6 : lun.getDay()-1));
+    desde = lun.toISOString().split('T')[0];
+    hasta = today;
+  } else if (periodo === 'mes') {
+    desde = today.slice(0,8)+'01';
+    hasta = today;
+  } else if (periodo === 'todo') {
+    // All txns + histDays
+    const allFechas = txns.map(t=>t.date||today).concat(histDays.map(d=>d.fecha));
+    desde = allFechas.sort()[0] || today;
+    hasta = today;
+  }
+
+  document.getElementById('dash-desde').value = desde;
+  document.getElementById('dash-hasta').value = hasta;
+  renderDashRango();
+}
+
+function isoToDisplay(iso) {
+  // Convert YYYY-MM-DD to DD/MM/YYYY for comparison with tx.date
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function dateInRange(txDate, desde, hasta) {
+  // txDate format: DD/MM/YYYY, desde/hasta: YYYY-MM-DD
+  if (!txDate || !desde || !hasta) return false;
+  const parts = txDate.split('/');
+  if (parts.length !== 3) return false;
+  const txISO = `${parts[2]}-${parts[1]}-${parts[0]}`;
+  return txISO >= desde && txISO <= hasta;
+}
+
+function renderDashRango() {
+  const desde = document.getElementById('dash-desde').value;
+  const hasta  = document.getElementById('dash-hasta').value;
+  const resEl  = document.getElementById('dash-rango-result');
+  if (!desde || !hasta) { resEl.style.display='none'; return; }
+  resEl.style.display = 'block';
+
+  // Filter txns in range
+  const rangeTxns = txns.filter(t => dateInRange(t.date, desde, hasta));
+
+  // Also include histDays in range
+  const rangeHist = histDays.filter(d => {
+    // histDays dates are like "Lun 13/01" — use desde/hasta loosely
+    // Try to match DD/MM
+    const parts = d.fecha.split(' ');
+    if (parts.length < 2) return false;
+    const dm = parts[1]; // DD/MM
+    const [dd, mm] = dm.split('/');
+    const year = desde.slice(0,4); // assume same year
+    const histISO = `${year}-${mm?.padStart(2,'0')}-${dd?.padStart(2,'0')}`;
+    return histISO >= desde && histISO <= hasta;
+  });
+
+  // Calculate totals
+  const totalVentas   = rangeTxns.reduce((s,t)=>s+t.total,0) + rangeHist.reduce((s,d)=>s+d.total,0);
+  const totalOrdenes  = rangeTxns.length + rangeHist.reduce((s,d)=>s+d.cmd,0);
+  let   tacos=0, beb=0, alm=0;
+  rangeTxns.forEach(t=>{
+    t.items?.forEach(it=>{
+      const p = products.find(x=>x.id===it.id);
+      if (!p) return;
+      if (p.cat==='Tacos')     tacos += it.qty;
+      else if (['Bebidas Embotelladas','Bebidas Preparadas','Bebidas'].includes(p.cat)) beb += it.qty;
+      else if (p.cat==='Almuerzos') alm += it.qty;
+    });
+  });
+  rangeHist.forEach(d=>{ tacos+=d.tacos||0; beb+=d.beb||0; alm+=d.alm||0; });
+
+  // Owner split
+  let alexV=0, betoV=0;
+  rangeTxns.forEach(t=>{ if(t.owner==='alex') alexV+=t.total; else betoV+=t.total; });
+  rangeHist.forEach(d=>{ alexV+=d.alex?.v||0; betoV+=d.beto?.v||0; });
+
+  // Update UI
+  const fmt = n => '$'+n.toLocaleString('es-MX',{minimumFractionDigits:2});
+  const fmtDate = iso => { const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
+
+  document.getElementById('dash-rango-lbl').textContent =
+    desde===hasta ? `Dia: ${fmtDate(desde)}` : `Del ${fmtDate(desde)} al ${fmtDate(hasta)}`;
+  document.getElementById('dr-total').textContent   = fmt(totalVentas);
+  document.getElementById('dr-ordenes').textContent = totalOrdenes;
+  document.getElementById('dr-tacos').textContent   = tacos;
+  document.getElementById('dr-beb').textContent     = beb;
+  document.getElementById('dr-alm').textContent     = alm;
+  document.getElementById('dr-alex').textContent    = fmt(alexV);
+  document.getElementById('dr-beto').textContent    = fmt(betoV);
+
+  // Day breakdown
+  const diasEl = document.getElementById('dr-dias');
+  if (rangeTxns.length > 0 || rangeHist.length > 0) {
+    // Group rangeTxns by date
+    const byDate = {};
+    rangeTxns.forEach(t => {
+      const d = t.date || 'Hoy';
+      if (!byDate[d]) byDate[d] = {total:0, ordenes:0};
+      byDate[d].total += t.total;
+      byDate[d].ordenes++;
+    });
+    rangeHist.forEach(d => {
+      if (!byDate[d.fecha]) byDate[d.fecha] = {total:0, ordenes:0};
+      byDate[d.fecha].total += d.total;
+      byDate[d.fecha].ordenes += d.cmd||0;
+    });
+    diasEl.innerHTML = Object.entries(byDate).map(([fecha, data]) =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--c-bord);font-size:12px;">
+        <span style="font-weight:700;color:var(--c-tx);">${fecha}</span>
+        <span style="color:var(--c-tx3);font-weight:600;">${data.ordenes} ordenes</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--c-or);">${fmt(data.total)}</span>
+      </div>`
+    ).join('');
+  } else {
+    diasEl.innerHTML = '<div style="color:var(--c-tx3);font-size:12px;font-weight:700;text-align:center;padding:8px 0;">Sin ventas en este periodo</div>';
+  }
 }
 
 function drawPie(tacos,beb,alm) {

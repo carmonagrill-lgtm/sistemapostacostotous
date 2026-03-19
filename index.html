@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com https://*.firebasestorage.app https://www.gstatic.com wss://*.firebaseio.com data:;">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -1356,41 +1357,41 @@ canvas#pieChart{display:block;}
   </div>
 </div>
 
-<div class="modal-overlay" id="mRcpt">
+<div class="modal-overlay" id="mRcpt-2">
   <div class="rcpt">
     <span class="chk">✅</span>
     <div style="font-size:16px;font-weight:900;margin-bottom:2px;color:var(--c-tx)">¡Pago Exitoso!</div>
     <div style="font-size:12px;color:var(--c-tx2);margin-bottom:14px;font-weight:600">Recibo de venta</div>
-    <div class="rcpt-logo" id="rBiz">Tacos Totous</div>
-    <div class="rcpt-addr" id="rInfo">La mejor taquería 🌮</div>
+    <div class="rcpt-logo" id="rBiz-2">Tacos Totous</div>
+    <div class="rcpt-addr" id="rInfo-2">La mejor taquería 🌮</div>
     <hr class="rcpt-div">
-    <div id="rItems"></div>
+    <div id="rItems-2"></div>
     <hr class="rcpt-div">
-    <div class="rcpt-line"><span>Subtotal</span><span id="r-sub"></span></div>
-    <div class="rcpt-line" id="r-dline" style="display:none;color:var(--c-gr)"><span>Descuento</span><span id="r-disc"></span></div>
-    <div class="rcpt-line" id="r-taxline" style="display:none;"><span>IVA (16%)</span><span id="r-tax"></span></div>
-    <div class="rcpt-total"><span>TOTAL</span><span id="r-total"></span></div>
-    <div class="rcpt-mth" id="r-mth"></div>
+    <div class="rcpt-line"><span>Subtotal</span><span id="r-sub-2"></span></div>
+    <div class="rcpt-line" id="r-dline-2" style="display:none;color:var(--c-gr)"><span>Descuento</span><span id="r-disc-2"></span></div>
+    <div class="rcpt-line" id="r-taxline-2" style="display:none;"><span>IVA (16%)</span><span id="r-tax-2"></span></div>
+    <div class="rcpt-total"><span>TOTAL</span><span id="r-total-2"></span></div>
+    <div class="rcpt-mth" id="r-mth-2"></div>
     <hr class="rcpt-div">
     <div class="rcpt-ty">¡Buen Provecho!</div>
-    <div class="rcpt-sb" id="rTy">Gracias por visitar Tacos Totous 🔥</div>
+    <div class="rcpt-sb" id="rTy-2">Gracias por visitar Tacos Totous 🔥</div>
     <button class="mprim" style="width:100%;padding:15px;font-size:15px;" onclick="newSale()">NUEVA VENTA</button>
   </div>
 </div>
 
-<div class="modal-overlay" id="mTort">
+<div class="modal-overlay" id="mTort-2">
   <div class="tort-modal">
     <div class="torthdr">
-      <span class="tortmoji" id="tEmoji">🌮</span>
-      <div class="torttl" id="tName">Taco</div>
+      <span class="tortmoji" id="tEmoji-2">🌮</span>
+      <div class="torttl" id="tName-2">Taco</div>
       <div class="tortsub">¿De qué tortilla lo quieres?</div>
       <span class="tortreq">⚠️ OBLIGATORIO</span>
     </div>
     <div class="tortopts">
-      <div class="tortopt" id="to-maiz" onclick="selTort('maiz')">
+      <div class="tortopt" id="to-maiz-2" onclick="selTort('maiz')">
         <div class="toi">🌽</div><div class="ton">Maíz</div>
         <div class="tod">Tradicional</div>
-        <div class="tochk" id="tc-maiz"></div>
+        <div class="tochk" id="tc-maiz-2"></div>
       </div>
 
 <!-- MODAL: Clave Maestra -->
@@ -1617,7 +1618,7 @@ canvas#pieChart{display:block;}
       <div class="mf full"><label class="ml">Nombre</label>
         <input class="mi" id="pv-nombre" placeholder="Ej: Frutería Vallarta, Merco..."></div>
       <div class="mf"><label class="ml">Tipo</label>
-        <select class="mi" id="pv-tipo">
+        <select class="mi" id="pv-tipo-2">
           <option>Supermercado</option><option>Mayorista</option><option>Frutería</option>
           <option>Carnicería</option><option>Chorizería</option><option>Lácteos</option>
           <option>Abarrotes</option><option>Especializado</option><option>Otro</option>

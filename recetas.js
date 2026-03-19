@@ -1,9 +1,3 @@
-/* -- Variables de estado de Recetas -- */
-let recetaCategorias = ['Salsas','Guisos','Almuerzos','Bebidas','Porciones'];
-let recCatFilter = 'Todas';
-let editRecetaId = null;
-let viewingRecetaId = null;
-
 /* -- Recetas y Costos -- */
 
 function renderRecetasView() {

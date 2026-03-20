@@ -7,9 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#1a0a00">
 <title>Tacos Totous</title>
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -4491,8 +4490,11 @@ function renderDashRango() {
   if (!desde || !hasta) { resEl.style.display='none'; return; }
   resEl.style.display = 'block';
 
-  // Filter txns in range
-  const rangeTxns = txns.filter(t => dateInRange(t.date, desde, hasta));
+  // Filter txns in range — use full history from Supabase if available
+  const allV = window._allVentas
+    ? window._allVentas.map(v=>({id:v.id, date:v.fecha, total:v.total, owner:v.owner, items:v.items, servicio:v.servicio}))
+    : txns;
+  const rangeTxns = allV.filter(t => dateInRange(t.date, desde, hasta));
 
   // Also include histDays in range
   const rangeHist = histDays.filter(d => {
@@ -4848,216 +4850,217 @@ function closeM(id){
 document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});});
 
 /* ══════════════════════════════════════════════════════════════
-   ██ INICIALIZACIÓN
+   ██ INICIALIZACIÓN — Supabase
    ══════════════════════════════════════════════════════════════ */
 
-/* ── Firebase Config ── */
-const firebaseConfig = {
-  apiKey: "AIzaSyCRJ3YV5gEbDeiKXMctjcc0koRyctQub5w",
-  authDomain: "sistema-pos-tacos-totous.firebaseapp.com",
-  projectId: "sistema-pos-tacos-totous",
-  storageBucket: "sistema-pos-tacos-totous.firebasestorage.app",
-  messagingSenderId: "510864516004",
-  appId: "1:510864516004:web:1eacc8d928250736d25731"
-};
+const SUPABASE_URL = 'https://dfbauqvhwutsgkuumvey.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmF1cXZod3V0c2drdXVtdmV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg2MTksImV4cCI6MjA4OTU0NDYxOX0.zseO37mPUUxap-IfNPqHu0xOfimWX8lDDt-yxk8699g';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-/* ── Colecciones en Firestore ── */
-// ventas       → txns[]
-// compras      → compras[]
-// prodLogs     → prodLogs[]
-// inventario   → ingredientes[], produccion[]
-// config       → biz, staff, menuCategorias, recetas, proveedores, empleados
-
-/* ── Indicador de estado de sync ── */
 function setSyncIndicator(estado) {
-  // estado: 'syncing' | 'ok' | 'error' | 'offline'
   const pill = document.getElementById('clk');
   if (!pill) return;
-  const dots = {syncing:'⟳', ok:'●', error:'✕', offline:'○'};
+  const dots   = {syncing:'⟳', ok:'●', error:'✕', offline:'○'};
   const colors = {syncing:'#F0A000', ok:'#00C060', error:'#D4001E', offline:'#6B5040'};
-  const dot = document.createElement('span');
   const existing = pill.querySelector('.sync-dot');
   if (existing) existing.remove();
   const span = document.createElement('span');
   span.className = 'sync-dot';
   span.textContent = ' ' + dots[estado];
   span.style.color = colors[estado];
-  span.style.fontSize = '10px';
   pill.appendChild(span);
 }
 
-/* ══ GUARDAR EN FIRESTORE ══ */
-
-async function fbSave(coleccion, id, data) {
+async function sbUpsert(tabla, data) {
   try {
     setSyncIndicator('syncing');
-    await db.collection(coleccion).doc(String(id)).set(data);
+    const { error } = await sb.from(tabla).upsert(data, {onConflict:'id'});
+    if (error) throw error;
     setSyncIndicator('ok');
   } catch(e) {
     setSyncIndicator('error');
-    console.error('Firebase save error:', coleccion, e);
+    console.error('Supabase error:', tabla, e.message);
   }
 }
 
-async function fbDelete(coleccion, id) {
+async function sbUpsertConfig(clave, valor) {
   try {
-    await db.collection(coleccion).doc(String(id)).delete();
+    const { error } = await sb.from('config').upsert({clave, valor}, {onConflict:'clave'});
+    if (error) throw error;
+    setSyncIndicator('ok');
   } catch(e) {
-    console.error('Firebase delete error:', e);
+    setSyncIndicator('error');
+    console.error('Supabase config error:', clave, e.message);
   }
 }
 
-/* ── Guardar venta ── */
 const _origProcessPay = processPay;
 function processPay() {
   _origProcessPay();
-  // txns[0] es la venta recién creada
   if (txns.length > 0) {
-    fbSave('ventas', txns[0].id, txns[0]);
+    const t = txns[0];
+    sbUpsert('ventas', {
+      id: t.id, fecha: t.date, hora: t.time,
+      total: t.total, subtotal: t.sub,
+      descuento: t.dv||0, impuesto: t.tax||0,
+      metodo_pago: t.payM, servicio: t.servicio,
+      owner: t.owner, items: t.items, packages: t.packages
+    });
   }
 }
 
-/* ── Guardar compra ── */
 const _origSaveCompra = saveCompra;
 function saveCompra() {
   _origSaveCompra();
   if (compras.length > 0) {
-    fbSave('compras', compras[0].id, compras[0]);
+    const c = compras[0];
+    sbUpsert('compras', {
+      id: c.id, fecha: c.fecha, producto_id: c.productoId,
+      nombre: c.nombre, cant: c.cant, unidad: c.unidad,
+      precio: c.precio, proveedor: c.proveedor||'',
+      notas: c.notas||'', sincronizado: c.sincronizado
+    });
   }
 }
 
-/* ── Guardar producción ── */
 const _origSaveProdLog = saveProdLog;
 function saveProdLog() {
   _origSaveProdLog();
   if (prodLogs.length > 0) {
-    fbSave('prodLogs', prodLogs[0].id, prodLogs[0]);
+    const l = prodLogs[0];
+    sbUpsert('prod_logs', {
+      id: l.id, fecha: l.fecha, tipo: l.tipo||'guiso',
+      producto_id: l.productoId, nombre: l.nombre, cat: l.cat,
+      cant: l.cant, unidad: l.unidad, quien: l.quien||'',
+      notas: l.notas||'', porcionado: l.porcionado||null,
+      sincronizado: l.sincronizado
+    });
   }
 }
 
-/* ── Guardar inventario (ingredientes) al ajustar stock ── */
 const _origAdjIngr = adjIngr;
 function adjIngr(id, d) {
   _origAdjIngr(id, d);
   const ing = ingredientes.find(i=>i.id===id);
-  if (ing) fbSave('ingredientes', ing.id, ing);
+  if (ing) sbUpsert('stock_ingredientes', {
+    id: ing.id, stock: ing.stock,
+    precio_compra: ing.precioCompra||0,
+    proveedor: ing.proveedor||''
+  });
 }
 
-/* ── Guardar inventario (producción) al ajustar ── */
 const _origAdjProd2 = adjProd2;
 function adjProd2(id, d) {
   _origAdjProd2(id, d);
   const p = produccion.find(x=>x.id===id);
-  if (p) fbSave('produccion', p.id, p);
+  if (p) sbUpsert('stock_produccion', {id: p.id, stock: p.stock});
 }
 
-/* ── Guardar config / staff / recetas cuando cambian ── */
-function fbSaveConfig() {
-  fbSave('config', 'biz',             {data: biz});
-  fbSave('config', 'staff',           {data: staff});
-  fbSave('config', 'menuCategorias',  {data: menuCategorias});
-  fbSave('config', 'recetas',         {data: recetas});
-  fbSave('config', 'recetaCategorias',{data: recetaCategorias});
-  fbSave('config', 'proveedores',     {data: proveedores});
-  fbSave('config', 'empleados',       {data: empleados});
-  fbSave('config', 'products',        {data: products});
+function sbSaveConfig() {
+  sbUpsertConfig('biz',              biz);
+  sbUpsertConfig('staff',            staff);
+  sbUpsertConfig('menuCategorias',   menuCategorias);
+  sbUpsertConfig('recetas',          recetas);
+  sbUpsertConfig('recetaCategorias', recetaCategorias);
+  sbUpsertConfig('proveedores',      proveedores);
+  sbUpsertConfig('empleados',        empleados);
+  sbUpsertConfig('products',         products);
 }
 
-// Guardar config al cerrar / cambiar pestaña
-window.addEventListener('beforeunload', fbSaveConfig);
-// Guardar config periódicamente cada 2 minutos
-setInterval(fbSaveConfig, 120000);
+window.addEventListener('beforeunload', sbSaveConfig);
+setInterval(sbSaveConfig, 120000);
 
-/* ══ CARGAR DESDE FIRESTORE AL INICIAR ══ */
-async function fbLoad() {
+async function sbLoad() {
   setSyncIndicator('syncing');
   try {
-    // Cargar config (biz, staff, recetas, productos, etc.)
-    const configDocs = ['biz','staff','menuCategorias','recetas','recetaCategorias','proveedores','empleados','products'];
-    for (const docId of configDocs) {
-      const doc = await db.collection('config').doc(docId).get();
-      if (doc.exists) {
-        const data = doc.data().data;
-        if (docId === 'biz')              biz = data;
-        else if (docId === 'staff')       staff = data;
-        else if (docId === 'menuCategorias') menuCategorias = data;
-        else if (docId === 'recetas')     recetas = data;
-        else if (docId === 'recetaCategorias') recetaCategorias = data;
-        else if (docId === 'proveedores') proveedores = data;
-        else if (docId === 'empleados')   empleados = data;
-        else if (docId === 'products')    products = data;
-      }
+    const { data: cfgRows } = await sb.from('config').select('*');
+    if (cfgRows) {
+      cfgRows.forEach(row => {
+        const v = row.valor;
+        if      (row.clave === 'biz')              biz              = v;
+        else if (row.clave === 'staff')            staff            = v;
+        else if (row.clave === 'menuCategorias')   menuCategorias   = v;
+        else if (row.clave === 'recetas')          recetas          = v;
+        else if (row.clave === 'recetaCategorias') recetaCategorias = v;
+        else if (row.clave === 'proveedores')      proveedores      = v;
+        else if (row.clave === 'empleados')        empleados        = v;
+        else if (row.clave === 'products')         products         = v;
+      });
     }
 
-    // Cargar ventas del día (filtramos en JS para evitar índice compuesto)
     const hoy = new Date().toLocaleDateString('es-MX');
-    const ventasSnap = await db.collection('ventas').get();
-    if (!ventasSnap.empty) {
-      txns = ventasSnap.docs.map(d=>d.data())
-        .filter(t=>t.date===hoy)
-        .sort((a,b)=>b.id-a.id);
+    const { data: ventasHoy } = await sb.from('ventas')
+      .select('*').eq('fecha', hoy).order('id', {ascending: false});
+    if (ventasHoy && ventasHoy.length) {
+      txns = ventasHoy.map(v => ({
+        id: v.id, date: v.fecha, time: v.hora,
+        total: v.total, sub: v.subtotal,
+        dv: v.descuento, tax: v.impuesto,
+        payM: v.metodo_pago, servicio: v.servicio,
+        owner: v.owner, items: v.items, packages: v.packages
+      }));
       salesTotal = txns.reduce((s,t)=>s+t.total, 0);
-      txns.forEach(t=>{
-        t.items?.forEach(it=>{ soldMap[it.id]=(soldMap[it.id]||0)+it.qty; });
+      txns.forEach(t => {
+        t.items?.forEach(it => { soldMap[it.id]=(soldMap[it.id]||0)+it.qty; });
         if (t.owner) ownerSales[t.owner] = (ownerSales[t.owner]||0) + t.total;
         if (t.servicio) servicioCount[t.servicio] = (servicioCount[t.servicio]||0) + 1;
       });
     }
 
-    // Cargar compras (todas, filtramos en JS)
-    const comprasSnap = await db.collection('compras').get();
-    if (!comprasSnap.empty) {
-      compras = comprasSnap.docs.map(d=>d.data()).sort((a,b)=>b.id-a.id);
+    const { data: todasVentas } = await sb.from('ventas')
+      .select('id,fecha,total,owner,items,servicio').order('id', {ascending:false}).limit(1000);
+    if (todasVentas) window._allVentas = todasVentas;
+
+    const { data: comprasData } = await sb.from('compras').select('*').order('id', {ascending:false});
+    if (comprasData && comprasData.length) {
+      compras = comprasData.map(c => ({
+        id:c.id, fecha:c.fecha, productoId:c.producto_id,
+        nombre:c.nombre, cant:c.cant, unidad:c.unidad,
+        precio:c.precio, proveedor:c.proveedor,
+        notas:c.notas, sincronizado:c.sincronizado
+      }));
     }
 
-    // Cargar registros de producción
-    const prodSnap = await db.collection('prodLogs').get();
-    if (!prodSnap.empty) {
-      prodLogs = prodSnap.docs.map(d=>d.data()).sort((a,b)=>b.id-a.id);
+    const { data: prodData } = await sb.from('prod_logs').select('*').order('id', {ascending:false});
+    if (prodData && prodData.length) {
+      prodLogs = prodData.map(l => ({
+        id:l.id, fecha:l.fecha, tipo:l.tipo,
+        productoId:l.producto_id, nombre:l.nombre, cat:l.cat,
+        cant:l.cant, unidad:l.unidad, quien:l.quien,
+        notas:l.notas, porcionado:l.porcionado, sincronizado:l.sincronizado
+      }));
     }
 
-    // Cargar stock de ingredientes
-    const ingrSnap = await db.collection('ingredientes').get();
-    if (!ingrSnap.empty) {
-      ingrSnap.docs.forEach(doc=>{
-        const saved = doc.data();
-        const local = ingredientes.find(i=>i.id===saved.id);
-        if (local) local.stock = saved.stock;
-      });
-    }
+    const { data: sIngr } = await sb.from('stock_ingredientes').select('*');
+    if (sIngr) sIngr.forEach(row => {
+      const ing = ingredientes.find(i=>i.id===row.id);
+      if (ing) { ing.stock=row.stock; if(row.precio_compra) ing.precioCompra=row.precio_compra; }
+    });
 
-    // Cargar stock de producción
-    const prodStockSnap = await db.collection('produccion').get();
-    if (!prodStockSnap.empty) {
-      prodStockSnap.docs.forEach(doc=>{
-        const saved = doc.data();
-        const local = produccion.find(p=>p.id===saved.id);
-        if (local) local.stock = saved.stock;
-      });
-    }
+    const { data: sProd } = await sb.from('stock_produccion').select('*');
+    if (sProd) sProd.forEach(row => {
+      const p = produccion.find(x=>x.id===row.id);
+      if (p) p.stock = row.stock;
+    });
 
     setSyncIndicator('ok');
-    console.log('Firebase: datos cargados correctamente');
+    console.log('Supabase: datos cargados correctamente');
   } catch(e) {
     setSyncIndicator('error');
-    console.error('Firebase load error:', e);
+    console.error('Supabase load error:', e.message);
   }
-
-  // Inicializar UI con datos cargados
   initLogin();
   renderCats();
   renderProds();
 }
 
-/* ── Detectar si hay conexión ── */
-window.addEventListener('online',  ()=>{ setSyncIndicator('ok');      fbSaveConfig(); });
-window.addEventListener('offline', ()=>{ setSyncIndicator('offline'); });
+window.addEventListener('online',  () => { setSyncIndicator('ok');      sbSaveConfig(); });
+window.addEventListener('offline', () => { setSyncIndicator('offline'); });
 
-/* ── Arrancar ── */
-fbLoad();
+sbLoad();
+
+
+
 </script>
 
 <!-- MODAL: Clave Maestra -->

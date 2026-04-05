@@ -1,5 +1,10 @@
 /* -- Variables Globales -- */
 
+/* Detectar si es tablet/desktop o móvil */
+function isTab() {
+  return window.innerWidth >= 768;
+}
+
 /* ══ PRODUCTOS ══ */
 
 

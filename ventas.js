@@ -333,15 +333,22 @@ function showReceipt(tx) {
   else document.getElementById('r-dline').style.display = 'none';
   document.getElementById('r-mth').textContent = {efectivo:'💵 Efectivo',tarjeta:'💳 Tarjeta',transferencia:'📲 Transferencia'}[tx.payM];
   openM('mRcpt');
+  // Auto-close receipt and go to kitchen after 3 seconds
+  setTimeout(() => {
+    closeM('mRcpt');
+    go('coc');
+  }, 3000);
 }
 
 function newSale() {
-  closeM('mRcpt'); packages=[]; nextPkg=0; disc=0; salesOwner='alex'; tipoServicio='aqui';
+  closeM('mRcpt');
+  packages=[]; nextPkg=0; disc=0; salesOwner='alex'; tipoServicio='aqui';
   if (ivaOn) toggleIva(); // reset IVA to off for next sale
   selServicio('aqui');
   const ind=document.getElementById('owner-indicator'); if(ind) ind.style.display='none';
   document.getElementById('dinput').value=''; document.getElementById('discLine').style.display='none';
   renderCart(); updateBadge();
+  go('pos', document.querySelector('[onclick*="go(\'pos\'"]'));
   if (!isTab()) showP('menu', document.getElementById('st-menu'));
 }
 

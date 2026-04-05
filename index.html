@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a0a00">
-<meta name="version" content="2.0.0">
+<meta name="version" content="3.0.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="manifest.json">
 <title>Tacos Totous</title>
 <script>
@@ -1307,19 +1310,43 @@ canvas#pieChart{display:block;}
 </div>
 
 <!-- Módulos JS — orden de carga es importante -->
+  <script>
+    // Force cache busting with timestamp
+    const v = '3.0.0-'+Date.now();
+    const s = (f) => {
+      const script = document.createElement('script');
+      script.src = f + '?v=' + v;
+      document.head.appendChild(script);
+    };
+  </script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
-  <script src="firebase.js?v=2.0.0"></script>
-  <script src="productos.js?v=2.0.0"></script>
-  <script src="usuarios.js?v=2.0.0"></script>
-  <script src="ventas.js?v=2.0.0"></script>
-  <script src="inventario.js?v=2.0.0"></script>
-  <script src="recetas.js?v=2.0.0"></script>
-  <script src="dashboard.js?v=2.0.0"></script>
-  <script src="cocina.js?v=2.0.0"></script>
-  <script src="personal.js?v=2.0.0"></script>
-  <script src="config.js?v=2.0.0"></script>
-  <script src="app.js?v=2.0.0"></script>
+  <script>
+    s('firebase.js'); s('productos.js'); s('usuarios.js'); s('ventas.js'); 
+    s('inventario.js'); s('recetas.js'); s('dashboard.js'); 
+    s('cocina.js'); s('personal.js'); s('config.js'); s('app.js');
+  </script>
+  
+  <!-- Diagnóstico del botón -->
+  <script>
+    setTimeout(() => {
+      console.log('🔍 DIAGNÓSTICO DEL BOTÓN COBRAR:');
+      const btn = document.getElementById('btnCobrar');
+      console.log('✓ Botón encontrado:', !!btn);
+      if (btn) {
+        console.log('  - Visible:', btn.offsetParent !== null);
+        console.log('  - Deshabilitado:', btn.disabled);
+        console.log('  - Texto:', btn.textContent);
+        console.log('  - Click handler:', btn.onclick);
+      }
+      console.log('✓ Función processPay existe:', typeof processPay === 'function');
+      console.log('✓ Variable packages existe:', typeof packages !== 'undefined');
+      if (typeof packages !== 'undefined') {
+        console.log('  - Contenido:', packages);
+      }
+      console.log('✓ Función allItems existe:', typeof allItems === 'function');
+    }, 2000);
+  </script>
 
 </body>
 </html>

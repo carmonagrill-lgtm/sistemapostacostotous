@@ -224,49 +224,58 @@ function selPay(m) {
 function processPay() {
   console.log('🔵 Botón COBRAR clickeado');
   const items = allItems(); 
-  if (!items.length) { alert('Agrega productos al carrito primero'); return; }
-  // Verificar stock de productos e ingredientes
+  if (!items.length) { 
+    alert('Agrega productos al carrito primero'); 
+    return; 
+  }
+  
+  // Validar stock disponible
   for (const it of items) {
-    const p = products.find(x=>x.id===it.id);
-    if (p) {
-      // Verificar stock del producto
-      if (p.stock < it.qty) {
-        alert(`Stock insuficiente de ${p.name}`);
-        return;
-      }
-      // Verificar stock de ingredientes si tiene receta
-      const rec = recetas.find(r=>r.nombre === p.name);
-      if (rec) {
-        for (const ingr of rec.ingredientes) {
-          const ing = ingredientes.find(i=>i.nombre === ingr.nombre);
-          if (ing) {
-            const cantNecesaria = ingr.cant * it.qty;
-            if (ing.stock < cantNecesaria) {
-              alert(`Stock insuficiente de ${ing.nombre} para ${p.name}`);
-              return;
-            }
-          }
+    const p = products.find(x => x.id === it.id);
+    if (!p) return;
+    if (p.stock < it.qty) {
+      alert(`Stock insuficiente de ${p.name}`);
+      return;
+    }
+    const rec = recetas.find(r => r.nombre === p.name);
+    if (rec) {
+      for (const ingr of rec.ingredientes) {
+        const ing = ingredientes.find(i => i.nombre === ingr.nombre);
+        if (ing && ing.stock < ingr.cant * it.qty) {
+          alert(`Stock insuficiente de ${ing.nombre}`);
+          return;
         }
       }
     }
   }
-  const sub = items.reduce((s,i)=>s+i.price*i.qty, 0);
-  const dv = sub*(disc/100), after = sub-dv;
-  const tax = ivaOn ? after*0.16 : 0;
+  
+  // Calcular totales
+  const sub = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const dv = sub * (disc / 100);
+  const after = sub - dv;
+  const tax = ivaOn ? after * 0.16 : 0;
   const total = after + tax;
-  // Validar que tipoServicio y payM estén definidos
+  
+  // Asegurar variables globales
   if (!tipoServicio) tipoServicio = 'aqui';
   if (!payM) payM = 'efectivo';
-  // Descontar stock de productos
-  items.forEach(it=>{ const p=products.find(x=>x.id===it.id); if(p) p.stock=Math.max(0,p.stock-it.qty); soldMap[it.id]=(soldMap[it.id]||0)+it.qty; });
-  // Descontar stock de ingredientes para productos con receta
-  for (const it of items) {
-    const p = products.find(x=>x.id===it.id);
+  
+  // Descontar stock
+  items.forEach(it => {
+    const p = products.find(x => x.id === it.id);
     if (p) {
-      const rec = recetas.find(r=>r.nombre === p.name);
+      p.stock = Math.max(0, p.stock - it.qty);
+      soldMap[it.id] = (soldMap[it.id] || 0) + it.qty;
+    }
+  });
+  
+  for (const it of items) {
+    const p = products.find(x => x.id === it.id);
+    if (p) {
+      const rec = recetas.find(r => r.nombre === p.name);
       if (rec) {
         for (const ingr of rec.ingredientes) {
-          const ing = ingredientes.find(i=>i.nombre === ingr.nombre);
+          const ing = ingredientes.find(i => i.nombre === ingr.nombre);
           if (ing) {
             ing.stock -= ingr.cant * it.qty;
           }
@@ -274,23 +283,38 @@ function processPay() {
       }
     }
   }
+  
+  // Crear transacción
   salesOwner = getAutoOwner(items);
-  ownerSales[salesOwner] = (ownerSales[salesOwner]||0) + total;
+  ownerSales[salesOwner] = (ownerSales[salesOwner] || 0) + total;
+  
   const tx = {
-    id:txns.length+1,
-    packages:packages.map(p=>({label:p.label, items:p.items.map(i=>({...i}))})),
-    items:items.map(i=>({...i})),
-    sub, dv, tax, total, payM, disc, owner:salesOwner, servicio:tipoServicio,
-    time:new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}),
-    date:new Date().toLocaleDateString('es-MX')
+    id: txns.length + 1,
+    packages: packages.map(p => ({ label: p.label, items: p.items.map(i => ({ ...i })) })),
+    items: items.map(i => ({ ...i })),
+    sub, dv, tax, total, payM, disc, owner: salesOwner, servicio: tipoServicio,
+    time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+    date: new Date().toLocaleDateString('es-MX')
   };
-  txns.unshift(tx); salesTotal += total;
-  try { saveTransactions(); } catch(e) { console.error('Error saving transactions:', e); }
-  servicioCount[tipoServicio] = (servicioCount[tipoServicio]||0) + 1;
+  
+  txns.unshift(tx);
+  salesTotal += total;
+  
+  // Guardar sin bloquear
+  try {
+    saveTransactions();
+  } catch (e) {
+    console.error('Error guardando:', e);
+  }
+  
+  servicioCount[tipoServicio] = (servicioCount[tipoServicio] || 0) + 1;
   console.log('✅ Venta procesada:', tx);
+  
   sendToKitchen(tx);
   if (sheetsUrl) syncSheets(tx);
-  showReceipt(tx); renderProds();
+  
+  showReceipt(tx);
+  renderProds();
 }
 
 function showReceipt(tx) {

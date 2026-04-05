@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1a0a00">
+<title>Tacos Totous</title>
+<script>
+  // Manejar redirección desde 404.html en GitHub Pages
+  (function(){
+    var redirect = sessionStorage.redirect;
+    delete sessionStorage.redirect;
+    if (redirect && redirect != location.href) {
+      history.replaceState(null, null, redirect);
+    }
+  })();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --c-bg:#FFF8F0;--c-surf:#FFFFFF;--c-surf2:#FFF3E6;--c-surf3:#FFE8CC;--c-bord:#F0D4B0;
+  --c-or:#E85500;--c-or2:#FF7A1A;--c-ye:#F0A000;--c-re:#D4001E;--c-gr:#008040;
+  --c-bl:#0066BB;--c-pu:#6B31D6;--c-tx:#1A0800;--c-tx2:#6B3A10;--c-tx3:#BF8850;
+  --g-main:linear-gradient(135deg,#E85500,#F0A000);
+  --g-fire:linear-gradient(135deg,#CC2200,#E85500,#F0A000);
+  --g-blue:linear-gradient(135deg,#0044AA,#0088DD);
+  --g-green:linear-gradient(135deg,#005C2E,#00A050);
+  --g-dark:linear-gradient(180deg,#2A1400,#1A0800);
+  --sh1:0 2px 8px rgba(232,85,0,.10);--sh2:0 4px 20px rgba(232,85,0,.18);--sh3:0 8px 32px rgba(232,85,0,.25);
+  --r:18px;--rs:12px;--rx:28px;
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overscroll-behavior:none;}
+body{font-family:'Nunito',sans-serif;background:var(--c-bg);color:var(--c-tx);display:flex;flex-direction:column;height:100dvh;overflow:hidden;padding-top:var(--st);}
+
+/* TOP BAR */
+.topbar{height:58px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:var(--c-tx);position:relative;z-index:40;}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--g-main);}
+.logo-wrap{display:flex;flex-direction:column;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;background:var(--g-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.logo-sub{font-size:8px;color:#6B5040;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-top:1px;}
+.clock-pill{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:rgba(255,255,255,.08);color:#F0A000;padding:6px 14px;border-radius:20px;border:1px solid rgba(240,160,0,.25);}
+.tablet-nav{display:none;gap:2px;}
+.tnav{padding:6px 12px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;color:#6B5040;border:none;background:transparent;font-family:'Nunito',sans-serif;white-space:nowrap;}
+.tnav.on{background:rgba(232,85,0,.18);color:var(--c-or2);border:1px solid rgba(232,85,0,.3);}
+
+/* SHELL */
+.app-shell{flex:1;position:relative;overflow:hidden;}
+.view{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .15s ease;overflow:hidden;min-height:0;}
+.view.on{opacity:1;pointer-events:all;}
+
+/* BOTTOM NAV */
+.bot-nav{height:calc(62px + var(--sb));padding-bottom:var(--sb);flex-shrink:0;display:flex;align-items:stretch;background:var(--c-tx);border-top:2px solid #2A1400;position:relative;z-index:40;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.bot-nav::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--g-main);}
+.bot-nav::-webkit-scrollbar{display:none;}
+.bnt{flex:0 0 72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;color:#5A3020;font-size:9px;font-weight:900;font-family:'Nunito',sans-serif;letter-spacing:.3px;text-transform:uppercase;touch-action:manipulation;transition:color .15s;padding-top:6px;}
+.bnt .bi{font-size:22px;line-height:1;}
+.bnt.on{color:var(--c-or2);}
+.bnt.on .bi{filter:drop-shadow(0 0 6px rgba(232,85,0,.5));}
+
+/* POS */
+#v-pos{background:var(--c-bg);min-height:0;}
+.subtabs{display:flex;flex-shrink:0;background:var(--c-tx);}
+.stab{flex:1;padding:13px;text-align:center;font-size:13px;font-weight:800;cursor:pointer;border:none;background:transparent;color:#5A3020;font-family:'Nunito',sans-serif;position:relative;touch-action:manipulation;}
+.stab.on{color:var(--c-or2);}
+.stab.on::after{content:'';position:absolute;bottom:0;left:15%;right:15%;height:3px;background:var(--g-main);border-radius:3px;}
+.cbadge{display:inline-block;background:var(--c-or);color:#fff;font-size:9px;font-weight:900;padding:1px 6px;border-radius:8px;margin-left:4px;vertical-align:middle;}
+.panels{flex:1;position:relative;overflow:hidden;min-height:0;}
+.panel{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;background:var(--c-bg);min-height:0;height:100%;}
+.panel.on{display:flex;}
+#p-menu{display:flex;}
+.searchbar{padding:12px 16px;background:var(--c-surf);border-bottom:1px solid var(--c-bord);}
+.sinput{width:100%;background:var(--c-surf2);border:2px solid var(--c-bord);border-radius:var(--rx);padding:11px 18px;color:var(--c-tx);font-size:15px;font-family:'Nunito',sans-serif;outline:none;transition:border-color .15s,background .15s;}
+.sinput:focus{border-color:var(--c-or);background:var(--c-surf);}
+.sinput::placeholder{color:var(--c-tx3);}
+.catbar{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;border-bottom:1px solid var(--c-bord);flex-shrink:0;}
+.catbar::-webkit-scrollbar{display:none;}
+.cpill{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:'Nunito',sans-serif;flex-shrink:0;border:2px solid var(--c-bord);background:var(--c-surf);color:var(--c-tx2);touch-action:manipulation;transition:all .15s;}
+.cpill:active{transform:scale(.94);}
+.cpill.on{background:var(--g-main);color:#fff;border-color:transparent;box-shadow:var(--sh2);}
+.pgrid{display:flex!important;flex-direction:column;gap:0;padding:0!important;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;}
+.pcard{background:var(--c-surf);border-bottom:1.5px solid var(--c-bord);cursor:pointer;display:flex;align-items:center;padding:13px 16px;gap:12px;transition:background .1s;touch-action:manipulation;position:relative;}
+.pcard:active{background:var(--c-surf2);}
+.pcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:0 3px 3px 0;}
+.pcard.cat-tacos::before{background:#E85500;}
+.pcard.cat-bebidas::before{background:#0066BB;}
+.pcard.cat-almuerzos::before{background:#008040;}
+.pcard-body{flex:1;min-width:0;}
+.pcard-name{font-size:15px;font-weight:800;color:var(--c-tx);line-height:1.2;}
+.pcard-cat{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-top:2px;}
+.pcard-cat.cat-tacos{color:#C06000;}
+.pcard-cat.cat-bebidas{color:#0055AA;}
+.pcard-cat.cat-almuerzos{color:#006630;}
+.pcard-price{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--c-or);flex-shrink:0;}
+.pcard-stock{font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;background:rgba(0,128,64,.1);color:var(--c-gr);font-family:'JetBrains Mono',monospace;flex-shrink:0;}
+.pcard-stock.lo{background:rgba(212,0,30,.1);color:var(--c-re);}
+
+/* CARRITO */
+#p-cart{display:none;flex-direction:column;background:var(--c-bg);height:100%;min-height:0;}
+#p-cart.on{display:flex;}
+.chdr{padding:8px 14px;background:var(--c-surf);border-bottom:1.5px solid var(--c-bord);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:5;}
+.ctitle{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--c-tx);}
+.chbtns{display:flex;gap:8px;}
+.btn-plato{padding:6px 12px;border-radius:20px;background:var(--g-main);border:none;color:#fff;font-size:11px;font-weight:900;font-family:'Nunito',sans-serif;box-shadow:0 3px 12px rgba(232,85,0,.35);touch-action:manipulation;cursor:pointer;}
+.btn-plato:active{transform:scale(.93);}
+.btn-vac{padding:6px 12px;border-radius:20px;background:rgba(212,0,30,.08);border:2px solid rgba(212,0,30,.2);color:var(--c-re);font-size:11px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;touch-action:manipulation;}
+.btn-vac:active{background:rgba(212,0,30,.2);}
+.citems{padding:12px 14px 0;display:flex;flex-direction:column;gap:8px;}
+.cempty{text-align:center;color:var(--c-tx3);font-size:14px;padding:40px 20px;line-height:1.9;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.cempty-ico{font-size:52px;margin-bottom:8px;opacity:.3;}
+.pkg{margin-bottom:6px;}
+.pkg-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--g-fire);border-radius:var(--r) var(--r) 0 0;}
+.pkg-lbl{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:#fff;}
+.pkg-cnt{font-size:11px;color:rgba(255,255,255,.75);font-weight:700;margin-left:8px;}
+.pkg-x{width:28px;height:28px;border-radius:8px;background:rgba(0,0,0,.2);border:none;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;flex-shrink:0;}
+.pkg-x:active{background:rgba(0,0,0,.45);}
+.pkg-bdy{border:2px solid var(--c-or);border-top:none;border-radius:0 0 var(--r) var(--r);padding:8px;display:flex;flex-direction:column;gap:6px;background:rgba(232,85,0,.025);}
+.pkg-nil{text-align:center;color:var(--c-tx3);font-size:12px;padding:12px 0;font-weight:700;cursor:pointer;}
+.pitem{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--rs);padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--sh1);}
+.pitem-row{display:flex;align-items:center;gap:8px;}
+.pitem-ico{font-size:20px;flex-shrink:0;}
+.pitem-inf{flex:1;min-width:0;}
+.pitem-name{font-size:13px;font-weight:800;color:var(--c-tx);line-height:1.2;}
+.pitem-sub{font-size:11px;color:var(--c-tx3);font-family:'JetBrains Mono',monospace;margin-top:1px;}
+.tort-tag{display:inline-flex;align-items:center;background:rgba(232,85,0,.1);border:1.5px solid rgba(232,85,0,.2);color:var(--c-or);font-size:9px;font-weight:900;padding:1px 7px;border-radius:20px;margin-left:5px;}
+.qctrl{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.qbtn{width:34px;height:34px;border-radius:10px;background:var(--c-surf2);border:2px solid var(--c-bord);color:var(--c-tx);font-size:19px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;flex-shrink:0;transition:all .12s;}
+.qbtn:active{background:var(--c-or);color:#fff;border-color:var(--c-or);}
+.qnum{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;min-width:24px;text-align:center;color:var(--c-or);}
+.xbtn{width:34px;height:34px;border-radius:10px;background:rgba(212,0,30,.07);border:1.5px solid rgba(212,0,30,.2);color:var(--c-re);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;flex-shrink:0;}
+.xbtn:active{background:rgba(212,0,30,.22);}
+.ntbtn{font-size:11px;font-weight:700;color:var(--c-tx3);background:none;border:none;cursor:pointer;font-family:'Nunito',sans-serif;padding:2px 0;text-align:left;touch-action:manipulation;}
+.ntbtn.has{color:var(--c-bl);}
+.ntarea{width:100%;background:var(--c-surf2);border:1.5px solid var(--c-bord);border-radius:8px;padding:8px 12px;color:var(--c-tx);font-size:14px;font-family:'Nunito',sans-serif;outline:none;resize:none;}
+.ntarea:focus{border-color:var(--c-bl);}
+.ntshow{font-size:11px;color:var(--c-bl);background:rgba(0,102,187,.07);border-radius:6px;padding:4px 10px;font-style:italic;}
+.cfooter{padding:8px 14px calc(14px + var(--sb));display:flex;flex-direction:column;gap:7px;background:var(--c-surf);}
+.cline{display:flex;justify-content:space-between;font-size:11px;color:var(--c-tx2);font-weight:600;padding:1px 0;}
+.cline span:last-child{font-family:'JetBrains Mono',monospace;}
+.ctotal{display:flex;justify-content:space-between;font-size:15px;font-weight:900;color:var(--c-tx);padding-top:6px;border-top:1.5px solid var(--c-bord);margin-bottom:2px;}
+.ctotal span:last-child{font-family:'JetBrains Mono',monospace;color:var(--c-or);}
+.discrow{display:flex;gap:6px;}
+.dinput{flex:1;background:var(--c-surf2);border:1.5px solid var(--c-bord);border-radius:20px;padding:8px 14px;color:var(--c-tx);font-size:13px;font-family:'Nunito',sans-serif;outline:none;}
+.dinput:focus{border-color:var(--c-ye);}
+.dinput::placeholder{color:var(--c-tx3);}
+.dapply{padding:8px 12px;border-radius:20px;background:var(--c-surf2);border:1.5px solid var(--c-bord);color:var(--c-tx2);font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;touch-action:manipulation;}
+.dapply:active{border-color:var(--c-ye);color:var(--c-ye);}
+.paymethods{display:flex;gap:8px;}
+.pmbn{flex:1;padding:7px 2px;border-radius:8px;border:1.5px solid var(--c-bord);background:var(--c-surf2);color:var(--c-tx2);font-size:10px;font-weight:800;cursor:pointer;text-align:center;font-family:'Nunito',sans-serif;touch-action:manipulation;transition:all .15s;}
+.pmbn.on{border-color:var(--c-or);color:var(--c-or);background:rgba(232,85,0,.07);box-shadow:0 0 0 3px rgba(232,85,0,.1);}
+.btncharge{padding:12px;border-radius:var(--rs);background:var(--g-main);border:none;color:#fff;font-size:15px;font-weight:900;cursor:pointer;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;box-shadow:0 4px 14px rgba(232,85,0,.4);touch-action:manipulation;}
+.btncharge:active{transform:scale(.97);}
+.btncharge:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;transform:none;}
+
+/* CART SCROLL WRAPPER */
+.cart-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;display:flex;flex-direction:column;}
+.cart-scroll-inner{display:flex;flex-direction:column;min-height:100%;}
+/* RECETAS VIEW */
+#v-rec{background:var(--c-bg);min-height:0;}
+.rec-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+.rec-pad{padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:calc(20px + var(--sb));}
+/* PRODUCCIONES */
+#v-prod{background:var(--c-bg);min-height:0;}
+.prod-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+.prod-pad{padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:calc(20px + var(--sb));}
+.plog-day{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);box-shadow:var(--sh1);overflow:hidden;margin-bottom:10px;}
+.plog-day-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:var(--g-dark);cursor:pointer;}
+.plog-day-fecha{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px;color:#FFF5E8;}
+.plog-day-badge{font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px;background:rgba(0,160,80,.25);color:#00D070;}
+.plog-items{display:flex;flex-direction:column;}
+.plog-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--c-bord);}
+.plog-item:last-child{border-bottom:none;}
+.plog-item-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.plog-item-inf{flex:1;min-width:0;}
+.plog-item-name{font-size:13px;font-weight:800;color:var(--c-tx);}
+.plog-item-det{font-size:11px;color:var(--c-tx3);font-weight:600;margin-top:1px;}
+.plog-item-cant{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--c-gr);flex-shrink:0;text-align:right;}
+.plog-item-synced{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;flex-shrink:0;}
+/* COMPRAS */
+#v-comp{background:var(--c-bg);min-height:0;}
+.comp-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+.comp-pad{padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:calc(20px + var(--sb));}
+.comp-day{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);box-shadow:var(--sh1);overflow:hidden;}
+.comp-day-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--g-dark);cursor:pointer;}
+.comp-day-fecha{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:#FFF5E8;}
+.comp-day-total{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--c-ye);}
+.comp-day-badge{font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px;background:rgba(232,85,0,.25);color:var(--c-or2);}
+.comp-items{display:flex;flex-direction:column;}
+.comp-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--c-bord);position:relative;}
+.comp-item:last-child{border-bottom:none;}
+.comp-item-ico{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;flex-shrink:0;}
+.comp-item-inf{flex:1;min-width:0;}
+.comp-item-name{font-size:13px;font-weight:800;color:var(--c-tx);}
+.comp-item-det{font-size:11px;color:var(--c-tx3);font-weight:600;margin-top:1px;}
+.comp-item-precio{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--c-or);flex-shrink:0;}
+.comp-item-synced{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;flex-shrink:0;}
+.synced-yes{background:rgba(0,128,64,.12);color:var(--c-gr);}
+.synced-no{background:rgba(240,160,0,.12);color:var(--c-ye);}
+.comp-empty{text-align:center;color:var(--c-tx3);font-size:13px;font-weight:700;padding:40px 20px;}
+/* RECETAS */
+.rcard{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);padding:14px;box-shadow:var(--sh1);cursor:pointer;transition:background .1s;margin-bottom:10px;}
+.rcard:active{background:var(--c-surf2);}
+.rcard-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.rcard-name{font-size:15px;font-weight:900;color:var(--c-tx);}
+.rcard-tipo{font-size:10px;font-weight:800;padding:2px 10px;border-radius:20px;}
+.rtipo-sub{background:rgba(107,49,214,.1);color:var(--c-pu);}
+.rtipo-rec{background:rgba(232,85,0,.1);color:var(--c-or);}
+.rcard-costos{display:flex;gap:12px;flex-wrap:wrap;}
+.rcosto{display:flex;flex-direction:column;}
+.rcosto-lbl{font-size:9px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;}
+.rcosto-val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--c-or);}
+.rcosto-val.green{color:var(--c-gr);}
+.rcard-ingrs{font-size:11px;color:var(--c-tx3);margin-top:6px;font-weight:600;}
+/* Fila ingrediente en modal receta */
+.ri-row{display:grid;grid-template-columns:1fr 80px 80px auto;gap:6px;align-items:center;}
+.ri-sel{background:var(--c-surf2);border:1.5px solid var(--c-bord);border-radius:8px;padding:8px 10px;color:var(--c-tx);font-size:13px;font-family:'Nunito',sans-serif;outline:none;width:100%;}
+.ri-num{background:var(--c-surf2);border:1.5px solid var(--c-bord);border-radius:8px;padding:8px 10px;color:var(--c-tx);font-size:13px;font-family:'JetBrains Mono',monospace;outline:none;width:100%;text-align:right;}
+.ri-unit{background:var(--c-surf2);border:1.5px solid var(--c-bord);border-radius:8px;padding:8px 6px;color:var(--c-tx);font-size:12px;font-family:'Nunito',sans-serif;outline:none;width:100%;}
+.ri-del{width:32px;height:32px;border-radius:8px;background:rgba(212,0,30,.07);border:1.5px solid rgba(212,0,30,.2);color:var(--c-re);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+/* EMPLEADOS */
+.emp-sec{display:none;}
+.emp-sec.vis{display:block;}
+.ecard{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);padding:14px;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--sh1);margin-bottom:10px;position:relative;}
+.ecard.inactivo{opacity:.6;border-style:dashed;}
+.ecard-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:900;color:#fff;flex-shrink:0;background:var(--c-or);}
+.ecard-inf{flex:1;min-width:0;}
+.ecard-name{font-size:14px;font-weight:900;color:var(--c-tx);}
+.ecard-role{font-size:11px;font-weight:700;color:var(--c-or);margin-top:1px;}
+.ecard-dates{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.edate{font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px;font-family:'JetBrains Mono',monospace;}
+.edate-in{background:rgba(0,128,64,.1);color:var(--c-gr);}
+.edate-out{background:rgba(212,0,30,.08);color:var(--c-re);}
+.ecard-nom{margin-top:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.enom-lbl{font-size:10px;font-weight:900;color:var(--c-tx3);letter-spacing:.5px;text-transform:uppercase;}
+.enom-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--c-or);}
+.enom-per{font-size:10px;color:var(--c-tx3);font-weight:600;}
+.ecard-acts{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.ebaja{padding:6px 10px;border-radius:8px;font-size:11px;font-weight:800;border:1.5px solid rgba(212,0,30,.2);background:rgba(212,0,30,.06);color:var(--c-re);cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;white-space:nowrap;}
+.ebaja:active{background:rgba(212,0,30,.18);}
+.ereact{padding:6px 10px;border-radius:8px;font-size:11px;font-weight:800;border:1.5px solid rgba(0,128,64,.2);background:rgba(0,128,64,.06);color:var(--c-gr);cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;white-space:nowrap;}
+/* DASHBOARD */
+#v-dash{background:var(--c-bg);min-height:0;}
+.dscroll{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0;}
+.dpad{padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:calc(20px + var(--sb));}
+.dash-hero{background:var(--g-dark);border-radius:var(--r);padding:20px;position:relative;overflow:hidden;}
+.dash-hero::before{content:'🌮';font-size:80px;opacity:.06;position:absolute;right:-10px;top:-10px;}
+.dash-hero-lbl{font-size:10px;color:#6B5040;font-weight:900;letter-spacing:1px;text-transform:uppercase;}
+.dash-hero-val{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:2px;background:var(--g-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:2px 0;}
+.dash-hero-sub{font-size:12px;color:#8B6040;font-weight:600;}
+.kpi4{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.kpi{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);padding:14px;box-shadow:var(--sh1);position:relative;overflow:hidden;}
+.kpi::after{content:'';position:absolute;bottom:-12px;right:-12px;width:50px;height:50px;border-radius:50%;opacity:.07;background:var(--c-or);}
+.kpi-ico{font-size:22px;margin-bottom:4px;display:block;}
+.kpi-lbl{font-size:9px;color:var(--c-tx3);font-weight:900;letter-spacing:.8px;text-transform:uppercase;}
+.kpi-v{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--c-tx);margin:2px 0;}
+.kpi-s{font-size:10px;color:var(--c-tx2);font-weight:600;}
+.dsec{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);padding:16px;box-shadow:var(--sh1);}
+.dsec-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--c-tx);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.pie-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;}
+canvas#pieChart{display:block;}
+.pie-leg{display:flex;flex-direction:column;gap:8px;width:100%;}
+.pie-li{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--c-tx2);}
+.pie-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.pie-val{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--c-tx);}
+.topbar-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1.5px solid var(--c-bord);}
+.topbar-item:last-child{border-bottom:none;}
+.tbi-ico{font-size:18px;}
+.tbi-inf{flex:1;min-width:0;}
+.tbi-name{font-size:13px;font-weight:800;color:var(--c-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tbi-bar{height:5px;background:var(--c-surf2);border-radius:3px;margin-top:4px;overflow:hidden;}
+.tbi-fill{height:100%;border-radius:3px;background:var(--g-main);}
+.tbi-n{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--c-tx);flex-shrink:0;}
+.emp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.emp-card{background:var(--c-surf2);border:1.5px solid var(--c-bord);border-radius:var(--rs);padding:12px;}
+.emp-name{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:var(--c-or);margin-bottom:8px;}
+.emp-row{display:flex;justify-content:space-between;font-size:12px;color:var(--c-tx2);font-weight:600;padding:3px 0;}
+.emp-row span:last-child{font-family:'JetBrains Mono',monospace;color:var(--c-tx);}
+.dday{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1.5px solid var(--c-bord);cursor:pointer;}
+.dday:last-child{border-bottom:none;}
+.dday-d{font-size:13px;font-weight:800;color:var(--c-tx);flex:1;}
+.dday-b{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;background:rgba(232,85,0,.08);color:var(--c-or);}
+.dday-t{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--c-gr);}
+.owner-only{display:none;}
+.owner-only.vis{display:block;}
+.locked-msg{background:rgba(232,85,0,.06);border:1.5px solid rgba(232,85,0,.15);border-radius:var(--rs);padding:14px;font-size:13px;font-weight:700;color:var(--c-or);text-align:center;}
+
+/* AGENTE IA */
+#v-agent{background:var(--c-bg);min-height:0;}
+.agent-header{padding:14px 18px;flex-shrink:0;background:var(--g-dark);display:flex;align-items:center;gap:12px;}
+.agent-av{width:42px;height:42px;border-radius:50%;background:var(--g-main);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 0 14px rgba(232,85,0,.4);}
+.agent-hinfo{flex:1;}
+.agent-hname{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:#fff;}
+.agent-hsub{font-size:11px;color:#8B6040;font-weight:600;}
+.agent-hdot{width:8px;height:8px;border-radius:50%;background:#00C060;box-shadow:0 0 6px #00C060;flex-shrink:0;}
+.achat{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0;}
+.amsg{display:flex;gap:10px;animation:msgIn .2s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.amsg-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-top:2px;}
+.amsg.bot .amsg-av{background:var(--c-surf2);border:2px solid var(--c-bord);}
+.amsg.usr .amsg-av{background:var(--g-main);}
+.amsg-bbl{max-width:82%;padding:11px 15px;border-radius:18px;font-size:14px;font-weight:600;line-height:1.55;}
+.amsg.bot .amsg-bbl{background:var(--c-surf);border:2px solid var(--c-bord);color:var(--c-tx);border-radius:4px 18px 18px 18px;box-shadow:var(--sh1);}
+.amsg.bot .amsg-bbl b{color:var(--c-or);}
+.amsg.usr .amsg-bbl{background:var(--g-main);color:#fff;border-radius:18px 18px 4px 18px;box-shadow:0 4px 16px rgba(232,85,0,.3);}
+.asugs{display:flex;gap:8px;overflow-x:auto;padding:8px 16px;flex-shrink:0;background:var(--c-surf);border-top:1px solid var(--c-bord);}
+.asugs::-webkit-scrollbar{display:none;}
+.asug{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:'Nunito',sans-serif;flex-shrink:0;border:2px solid var(--c-bord);background:var(--c-surf2);color:var(--c-tx2);touch-action:manipulation;transition:all .15s;}
+.asug:active{background:var(--c-or);color:#fff;border-color:var(--c-or);}
+.ainbar{padding:12px 16px calc(12px + var(--sb));background:var(--c-surf);border-top:2px solid var(--c-bord);display:flex;gap:10px;flex-shrink:0;box-shadow:0 -4px 20px rgba(232,85,0,.08);}
+.ainput{flex:1;background:var(--c-surf2);border:2px solid var(--c-bord);border-radius:24px;padding:12px 18px;color:var(--c-tx);font-size:15px;font-family:'Nunito',sans-serif;outline:none;transition:border-color .15s;}
+.ainput:focus{border-color:var(--c-or);}
+.ainput::placeholder{color:var(--c-tx3);}
+.asend{width:46px;height:46px;border-radius:50%;background:var(--g-main);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(232,85,0,.35);touch-action:manipulation;}
+.asend:active{transform:scale(.9);}
+.tdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c-tx3);margin:0 2px;animation:tdotb .9s infinite;}
+.tdot:nth-child(2){animation-delay:.15s;}
+.tdot:nth-child(3){animation-delay:.3s;}
+@keyframes tdotb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
+
+/* COCINA */
+#v-coc{background:#150800;min-height:0;}
+.kds-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#0A0400;border-bottom:2px solid #2A1400;flex-shrink:0;}
+.kds-ttl{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#E87000;}
+.kds-sts{display:flex;gap:12px;align-items:center;}
+.kds-st{text-align:center;}
+.kds-n{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#F0C000;line-height:1;}
+.kds-l{font-size:9px;color:#8B5030;font-weight:800;letter-spacing:.6px;text-transform:uppercase;}
+.kds-sep{width:1px;height:32px;background:#2A1400;}
+.kds-mt{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+.kds-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px;}
+.kds-scroll{padding:14px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(14px + var(--sb));}
+.kds-card{border-radius:var(--r);overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:kIn .25s ease;}
+@keyframes kIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.kds-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;}
+.kds-card.snew .kds-card-hdr{background:#AA0018;}
+.kds-card.sprep .kds-card-hdr{background:#AA6800;}
+.kds-card.sdone .kds-card-hdr{background:#006030;}
+.kds-on{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#fff;}
+.kds-om{font-size:11px;color:rgba(255,255,255,.7);font-weight:700;margin-top:1px;}
+.kds-tmr{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:#fff;background:rgba(0,0,0,.3);padding:4px 12px;border-radius:8px;}
+.kds-tmr.urg{animation:ublnk .7s infinite;}
+@keyframes ublnk{0%,100%{opacity:1}50%{opacity:.2}}
+.kds-bd{background:#200C00;padding:8px 12px;}
+.kds-card.sdone .kds-bd{background:#061208;}
+.kds-pkg-hdr{padding:7px 12px;}
+.kds-card.snew .kds-pkg-hdr{background:#700010;}
+.kds-card.sprep .kds-pkg-hdr{background:#704400;}
+.kds-card.sdone .kds-pkg-hdr{background:#004020;}
+.kds-pkg-l{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;color:#fff;}
+.kds-pkg-bd{padding:6px 12px;background:#180600;}
+.kds-card.sdone .kds-pkg-bd{background:#040A06;}
+.kds-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid #2A1400;}
+.kds-item:last-child{border-bottom:none;}
+.kds-iq{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;min-width:32px;text-align:center;}
+.kds-card.snew .kds-iq{color:#FF6060;}
+.kds-card.sprep .kds-iq{color:#FFD200;}
+.kds-card.sdone .kds-iq{color:#00C060;}
+.kds-in{font-size:14px;font-weight:800;color:#FFF5E8;line-height:1.3;}
+.kds-inote{margin-top:4px;font-size:11px;font-weight:700;color:#FFD200;background:rgba(255,210,0,.12);border-left:3px solid #FFD200;padding:3px 8px;border-radius:0 5px 5px 0;}
+.kds-ft{display:flex;gap:8px;padding:12px 16px;background:#180600;}
+.kds-card.sdone .kds-ft{background:#04080A;}
+.kbtn{flex:1;padding:13px;border-radius:var(--rs);font-size:13px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;border:none;touch-action:manipulation;}
+.kbtn:active{transform:scale(.95);}
+.kbprep{background:#F0A000;color:#000;}
+.kbdone{background:#008040;color:#fff;}
+.kbsec{background:rgba(255,255,255,.06);color:#8B5030;border:1.5px solid #2A1400!important;}
+
+/* INVENTARIO */
+#v-inv{background:var(--c-bg);min-height:0;display:flex;flex-direction:column;}
+.inv-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+.inv-pad{padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:calc(20px + var(--sb));}
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;}
+.sec-ttl{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1.5px;background:var(--g-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sec-sub{font-size:12px;color:var(--c-tx2);margin-top:1px;font-weight:600;}
+.btn-add{padding:10px 18px;border-radius:20px;background:var(--g-main);border:none;color:#fff;font-size:13px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:var(--sh2);touch-action:manipulation;}
+.btn-add:active{transform:scale(.95);}
+.icat-tabs{display:flex;gap:7px;overflow-x:auto;flex-shrink:0;}
+.icat-tabs::-webkit-scrollbar{display:none;}
+.ictab{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;border:2px solid var(--c-bord);background:var(--c-surf);color:var(--c-tx2);font-family:'Nunito',sans-serif;flex-shrink:0;touch-action:manipulation;}
+.ictab.on{background:var(--g-main);color:#fff;border-color:transparent;box-shadow:var(--sh1);}
+.icards{display:flex;flex-direction:column;gap:10px;}
+.icard{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);padding:14px;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--sh1);}
+.icard-ico{font-size:28px;flex-shrink:0;margin-top:2px;}
+.icard-inf{flex:1;min-width:0;}
+.icard-name{font-size:14px;font-weight:900;color:var(--c-tx);}
+.icard-cat{font-size:10px;color:var(--c-tx3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:2px 0 6px;}
+.icard-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.iprice{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--c-or);}
+.imargin{font-size:11px;color:var(--c-gr);font-weight:800;background:rgba(0,128,64,.09);padding:2px 8px;border-radius:6px;}
+.spill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+.sok{background:rgba(0,128,64,.12);color:var(--c-gr);}
+.slo{background:rgba(212,0,30,.1);color:var(--c-re);}
+.smd{background:rgba(240,160,0,.12);color:var(--c-ye);}
+.istk{display:flex;align-items:center;gap:6px;margin-top:7px;}
+.isb{width:30px;height:30px;border-radius:8px;background:var(--c-surf2);border:1.5px solid var(--c-bord);color:var(--c-tx);font-size:17px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
+.isb:active{background:var(--c-or);color:#fff;border-color:var(--c-or);}
+.isn{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;min-width:30px;text-align:center;color:var(--c-or);}
+.iacts{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.ied{padding:8px 12px;border-radius:8px;font-size:12px;font-weight:800;border:2px solid var(--c-bord);background:var(--c-surf2);color:var(--c-tx2);cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;}
+.ied:active{border-color:var(--c-or);color:var(--c-or);}
+.idl{padding:8px 12px;border-radius:8px;font-size:12px;font-weight:800;border:2px solid rgba(212,0,30,.2);background:rgba(212,0,30,.06);color:var(--c-re);cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;}
+.idl:active{background:rgba(212,0,30,.18);}
+.itbl{display:none;}
+.itbl table{width:100%;border-collapse:collapse;}
+.itbl th{padding:10px 14px;text-align:left;font-size:10px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;color:var(--c-tx3);border-bottom:2px solid var(--c-bord);background:var(--c-surf2);}
+.itbl td{padding:10px 14px;font-size:13px;border-bottom:1.5px solid var(--c-bord);color:var(--c-tx);vertical-align:middle;}
+.itbl tr:last-child td{border-bottom:none;}
+.itbl tr:hover td{background:var(--c-surf2);}
+.tba{display:flex;gap:6px;}
+.tbe{padding:6px 10px;border-radius:7px;font-size:12px;font-weight:700;border:1.5px solid var(--c-bord);background:var(--c-surf2);color:var(--c-tx2);cursor:pointer;font-family:'Nunito',sans-serif;}
+.tbe:hover{border-color:var(--c-or);color:var(--c-or);}
+.tbd{padding:6px 10px;border-radius:7px;font-size:12px;font-weight:700;border:1.5px solid rgba(212,0,30,.2);background:rgba(212,0,30,.05);color:var(--c-re);cursor:pointer;font-family:'Nunito',sans-serif;}
+.tbd:hover{background:rgba(212,0,30,.12);}
+
+/* PERSONAL */
+#v-per{background:var(--c-bg);min-height:0;}
+.per-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+.per-pad{padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(20px + var(--sb));}
+.scard{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);padding:14px;display:flex;gap:12px;align-items:center;box-shadow:var(--sh1);}
+.sav{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;flex-shrink:0;}
+.sav-admin{background:var(--c-pu);}
+.sav-dueno{background:var(--c-or);}
+.sav-cajero{background:#FF7A1A;}
+.sav-cocina{background:var(--c-gr);}
+.sav-cocinero{background:#B05000;}
+.sav-mesero{background:#0066BB;}
+.sinf{flex:1;min-width:0;}
+.sname{font-size:14px;font-weight:900;color:var(--c-tx);}
+.srole{font-size:11px;font-weight:700;margin-top:2px;}
+.sr-admin{color:var(--c-pu);}.sr-dueno{color:var(--c-or);}.sr-cajero{color:#FF7A1A;}.sr-cocina{color:var(--c-gr);}.sr-cocinero{color:#B05000;}.sr-mesero{color:#0066BB;}
+.susr{font-size:11px;color:var(--c-tx3);margin-top:2px;}
+.sst{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;margin-top:4px;}
+.ston{background:rgba(0,128,64,.12);color:var(--c-gr);}
+.stoff{background:rgba(200,200,200,.2);color:var(--c-tx3);}
+.sacts{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+
+/* CONFIG */
+#v-cfg{background:var(--c-bg);min-height:0;}
+.cfg-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+.cfg-pad{padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:calc(20px + var(--sb));}
+.cfg-card{background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);padding:16px;box-shadow:var(--sh1);}
+.cfg-ct{font-size:14px;font-weight:900;color:var(--c-tx);margin-bottom:4px;}
+.cfg-cs{font-size:12px;color:var(--c-tx2);margin-bottom:14px;line-height:1.5;}
+.cfg-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.cfg-lbl{font-size:10px;font-weight:900;color:var(--c-tx3);letter-spacing:.7px;text-transform:uppercase;}
+.cfg-inp{background:var(--c-surf2);border:2px solid var(--c-bord);border-radius:var(--rs);padding:11px 14px;color:var(--c-tx);font-size:14px;font-family:'Nunito',sans-serif;outline:none;width:100%;}
+.cfg-inp:focus{border-color:var(--c-or);}
+.cfg-inp::placeholder{color:var(--c-tx3);}
+.syst{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;padding:10px 14px;border-radius:var(--rs);margin-bottom:12px;}
+.sy0{background:var(--c-surf2);color:var(--c-tx2);border:1.5px solid var(--c-bord);}
+.sy1{background:rgba(0,128,64,.1);color:var(--c-gr);border:1.5px solid rgba(0,128,64,.2);}
+.sy2{background:rgba(212,0,30,.08);color:var(--c-re);border:1.5px solid rgba(212,0,30,.15);}
+.btn-sync{width:100%;padding:13px;border-radius:var(--rs);background:var(--g-main);border:none;color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:var(--sh2);touch-action:manipulation;}
+.ibox{background:rgba(0,102,187,.06);border:1.5px solid rgba(0,102,187,.2);border-radius:var(--rs);padding:12px 14px;font-size:12px;color:var(--c-bl);line-height:1.6;font-weight:600;margin-bottom:12px;}
+.slog{display:flex;flex-direction:column;}
+.sli{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--c-bord);font-size:12px;}
+.sli:last-child{border-bottom:none;}
+.slt{color:var(--c-tx3);font-family:'JetBrains Mono',monospace;font-size:11px;}
+.slok{color:var(--c-gr);font-weight:700;}.sler{color:var(--c-re);font-weight:700;}
+
+/* MODALES */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,4,0,.65);backdrop-filter:blur(8px);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+@keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal{background:var(--c-surf);border:2px solid var(--c-bord);border-radius:24px 24px 0 0;padding:20px 20px calc(20px + var(--sb));width:100%;max-height:92dvh;overflow-y:auto;animation:sup .25s ease;box-shadow:0 -10px 40px rgba(232,85,0,.18);}
+.modal::before{content:'';display:block;width:44px;height:4px;border-radius:2px;background:var(--c-bord);margin:0 auto 18px;}
+.modal-ttl{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;background:var(--g-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:18px;}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+.mf{display:flex;flex-direction:column;gap:5px;}
+.mf.full{grid-column:1/-1;}
+.ml{font-size:10px;font-weight:900;color:var(--c-tx3);letter-spacing:.7px;text-transform:uppercase;}
+.mi{background:var(--c-surf2);border:2px solid var(--c-bord);border-radius:var(--rs);padding:12px 14px;color:var(--c-tx);font-size:16px;font-family:'Nunito',sans-serif;outline:none;width:100%;}
+.mi:focus{border-color:var(--c-or);}
+.mi::placeholder{color:var(--c-tx3);}
+.mbtns{display:flex;gap:10px;}
+.mcancel{flex:1;padding:13px;border-radius:var(--rs);background:var(--c-surf2);border:2px solid var(--c-bord);color:var(--c-tx2);font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;}
+.mprim{padding:13px;border-radius:var(--rs);background:var(--g-main);border:none;color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;flex:1;touch-action:manipulation;box-shadow:var(--sh2);}
+.tort-modal{background:var(--c-surf);border:2px solid var(--c-bord);border-radius:24px 24px 0 0;padding:22px 20px calc(20px + var(--sb));width:100%;max-height:88dvh;animation:sup .22s ease;box-shadow:0 -10px 40px rgba(232,85,0,.2);}
+.tort-modal::before{content:'';display:block;width:44px;height:4px;border-radius:2px;background:var(--c-bord);margin:0 auto 18px;}
+.torthdr{text-align:center;margin-bottom:20px;}
+.tortmoji{font-size:50px;display:block;margin-bottom:8px;}
+.torttl{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;background:var(--g-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.tortsub{font-size:13px;color:var(--c-tx2);font-weight:600;margin-top:4px;}
+.tortreq{display:inline-block;background:rgba(212,0,30,.1);color:var(--c-re);font-size:10px;font-weight:900;padding:2px 10px;border-radius:20px;letter-spacing:.6px;margin-top:8px;}
+.tortopts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.tortopt{border:2.5px solid var(--c-bord);border-radius:var(--r);padding:20px 12px;text-align:center;cursor:pointer;background:var(--c-surf2);display:flex;flex-direction:column;align-items:center;gap:8px;touch-action:manipulation;}
+.tortopt:active{transform:scale(.94);}
+.tortopt.on{border-color:var(--c-or);background:rgba(232,85,0,.06);box-shadow:0 0 0 3px rgba(232,85,0,.12);}
+.toi{font-size:40px;line-height:1;}
+.ton{font-size:15px;font-weight:900;color:var(--c-tx);}
+.tod{font-size:11px;color:var(--c-tx3);font-weight:600;}
+.tochk{width:24px;height:24px;border-radius:50%;border:2px solid var(--c-bord);background:var(--c-surf3);display:flex;align-items:center;justify-content:center;font-size:13px;margin-top:4px;}
+.tortopt.on .tochk{background:var(--c-or);border-color:var(--c-or);color:#fff;}
+.btn-addtaco{width:100%;padding:16px;border-radius:var(--r);background:var(--g-main);border:none;color:#fff;font-size:17px;font-weight:900;cursor:pointer;font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;box-shadow:0 6px 22px rgba(232,85,0,.4);touch-action:manipulation;}
+.btn-addtaco:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;}
+.btn-addtaco:not(:disabled):active{transform:scale(.97);}
+.rcpt{background:var(--c-surf);border:2px solid var(--c-bord);border-radius:24px 24px 0 0;padding:18px 18px calc(18px + var(--sb));width:100%;max-height:92dvh;overflow-y:auto;animation:sup .25s ease;text-align:center;box-shadow:0 -10px 40px rgba(232,85,0,.18);}
+.rcpt::before{content:'';display:block;width:44px;height:4px;border-radius:2px;background:var(--c-bord);margin:0 auto 14px;}
+.rcpt-logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;background:var(--g-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.rcpt-addr{font-size:11px;color:var(--c-tx3);margin-bottom:14px;font-weight:600;}
+.rcpt-div{border:none;border-top:2px dashed var(--c-bord);margin:12px 0;}
+.rcpt-line{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--c-tx2);font-weight:600;}
+.rcpt-line span:last-child{font-family:'JetBrains Mono',monospace;}
+.rcpt-note{font-size:10px;color:var(--c-bl);text-align:left;padding:2px 0 4px 6px;font-style:italic;}
+.rcpt-total{display:flex;justify-content:space-between;font-size:17px;font-weight:900;color:var(--c-tx);padding:8px 0 0;}
+.rcpt-total span:last-child{font-family:'JetBrains Mono',monospace;color:var(--c-or);}
+.rcpt-mth{font-size:12px;color:var(--c-tx3);margin:8px 0 14px;font-weight:600;}
+.rcpt-ty{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;background:var(--g-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:3px;}
+.rcpt-sb{font-size:11px;color:var(--c-tx3);margin-bottom:16px;font-weight:600;}
+.chk{font-size:56px;margin-bottom:8px;display:block;animation:pop .3s ease;}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+
+/* LOGIN */
+.login-overlay{position:fixed;inset:0;background:var(--c-tx);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:4px;background:var(--g-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px;line-height:1;}
+.login-sub{font-size:11px;color:#6B5040;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:36px;}
+.login-card{background:#2A1400;border:1.5px solid #3A2000;border-radius:20px;padding:24px;width:100%;max-width:340px;}
+.login-ttl{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#E87000;margin-bottom:4px;}
+.login-hint{font-size:12px;color:#6B4020;font-weight:600;margin-bottom:20px;line-height:1.5;}
+.user-list{display:flex;flex-direction:column;gap:10px;margin-bottom:4px;}
+.user-btn{background:#1A0800;border:2px solid #3A2000;border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;touch-action:manipulation;transition:border-color .15s,background .15s;font-family:'Nunito',sans-serif;width:100%;}
+.user-btn:active{border-color:#E85500;background:#250E00;}
+.user-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0;}
+.user-info{flex:1;text-align:left;}
+.user-name{font-size:14px;font-weight:800;color:#FFF5E8;}
+.user-role-tag{font-size:11px;font-weight:700;margin-top:1px;}
+.tag-admin{color:#A070FF;}
+.tag-cajero{color:#E85500;}
+.tag-cocina{color:#00A050;}
+.pin-wrap{display:flex;flex-direction:column;gap:10px;}
+.pin-who{font-size:13px;color:#BF8850;font-weight:700;margin-bottom:2px;}
+.pin-input{background:#1A0800;border:2px solid #3A2000;border-radius:10px;padding:14px;color:#FFF5E8;font-size:24px;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:8px;text-align:center;outline:none;width:100%;}
+.pin-input:focus{border-color:#E85500;}
+.pin-error{color:#D4001E;font-size:12px;font-weight:700;text-align:center;min-height:18px;margin-top:2px;}
+.pin-btns{display:flex;gap:8px;margin-top:4px;}
+.pin-back{flex:0 0 auto;padding:13px 16px;background:#1A0800;border:2px solid #3A2000;border-radius:10px;color:#8B6040;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;}
+.pin-enter{flex:1;padding:13px;background:var(--g-main);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;box-shadow:0 4px 16px rgba(232,85,0,.35);}
+.dueno-row{display:flex;gap:8px;}
+.dueno-btn{flex:1;padding:10px 4px;border-radius:10px;border:2px solid var(--c-bord);background:var(--c-surf2);color:var(--c-tx2);font-size:12px;font-weight:800;cursor:pointer;text-align:center;font-family:'Nunito',sans-serif;touch-action:manipulation;transition:all .15s;}
+.dueno-btn.on{border-color:var(--c-or);color:var(--c-or);background:rgba(232,85,0,.08);}
+.active-user-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.08);border:1px solid rgba(240,160,0,.2);border-radius:20px;padding:5px 12px;cursor:default;}
+.au-dot{width:7px;height:7px;border-radius:50%;background:#00C060;box-shadow:0 0 5px #00C060;flex-shrink:0;}
+.au-name{font-size:12px;font-weight:800;color:#F0A000;font-family:'Nunito',sans-serif;}
+
+/* TABLET */
+@media(min-width:680px){
+  .bot-nav{display:none;}
+  .tablet-nav{display:flex;}
+  .topbar{padding:0 24px;height:62px;}
+  #v-pos .subtabs{display:none;}
+  #v-pos .panels{display:grid;grid-template-columns:1fr 340px;}
+  .panel{position:relative;display:flex!important;height:100%;min-height:0;}
+  #p-cart{display:grid!important;border-left:2px solid var(--c-bord);height:100%;}
+  .cfooter{padding-bottom:14px;}
+  .icards{display:none;}
+  .itbl{display:block;background:var(--c-surf);border:1.5px solid var(--c-bord);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh1);}
+  .inv-pad,.per-pad,.cfg-pad,.dpad{padding:24px;gap:18px;}
+  .kpi4{grid-template-columns:repeat(4,1fr);}
+  .modal-overlay{align-items:center;}
+  .modal{border-radius:20px;max-width:500px;padding:28px;margin-bottom:0;}
+  .modal::before{display:none;}
+  .tort-modal{border-radius:20px;max-width:420px;padding:28px;margin-bottom:0;}
+  .tort-modal::before{display:none;}
+  .rcpt{border-radius:20px;max-width:380px;padding:26px;margin-bottom:0;}
+  .rcpt::before{display:none;}
+}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo-wrap">
+    <div class="logo">Tacos Totous</div>
+    <div class="logo-sub">Sistema POS</div>
+  </div>
+  <div class="tablet-nav" id="tnav">
+    <button class="tnav" onclick="go('dash',this)">📊 Panel</button>
+    <button class="tnav on" onclick="go('pos',this)">🌮 Venta</button>
+    <button class="tnav" onclick="go('coc',this)">👨‍🍳 Cocina</button>
+    <button class="tnav" onclick="go('inv',this)">📦 Inventario</button>
+    <button class="tnav" onclick="go('comp',this)">🛒 Compras</button>
+    <button class="tnav" onclick="go('prod',this)">🍳 Producción</button>
+    <button class="tnav" onclick="go('rec',this)">📋 Recetas</button>
+    <button class="tnav" onclick="go('agent',this)">🤖 Agente</button>
+    <button class="tnav" onclick="go('per',this)">👥 Personal</button>
+    <button class="tnav" onclick="go('cfg',this)">⚙️ Config</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="clock-pill" id="clk">--:--</div>
+    <div class="active-user-pill" id="userPill" style="display:none;cursor:default;">
+      <div class="au-dot"></div>
+      <div class="au-name" id="userPillName">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="app-shell">
+
+<!-- DASHBOARD -->
+<div class="view" id="v-dash">
+  <div class="dscroll">
+    <div class="dpad">
+      <div class="dash-hero">
+        <div class="dash-hero-lbl">Total acumulado de ventas</div>
+        <div class="dash-hero-val" id="d-total">$0</div>
+        <div class="dash-hero-sub" id="d-cmd">0 comandas totales</div>
+      </div>
+      <div class="kpi4">
+        <div class="kpi"><span class="kpi-ico">🌮</span><div class="kpi-lbl">Tacos</div><div class="kpi-v" id="d-tacos">0</div><div class="kpi-s">piezas</div></div>
+        <div class="kpi"><span class="kpi-ico">🥤</span><div class="kpi-lbl">Bebidas</div><div class="kpi-v" id="d-beb">0</div><div class="kpi-s">piezas</div></div>
+        <div class="kpi"><span class="kpi-ico">📋</span><div class="kpi-lbl">Órdenes</div><div class="kpi-v" id="d-ordenes">0</div><div class="kpi-s">total</div></div>
+        <div class="kpi"><span class="kpi-ico">🍽</span><div class="kpi-lbl">Platos</div><div class="kpi-v" id="d-platos">0</div><div class="kpi-s">servidos</div></div>
+        <div class="kpi owner-only" id="kpi-punto"><span class="kpi-ico">⭐</span><div class="kpi-lbl">Punto</div><div class="kpi-v" id="d-punto">$0</div><div class="kpi-s">ganancia</div></div>
+        <div class="kpi owner-only" id="kpi-nom"><span class="kpi-ico">👥</span><div class="kpi-lbl">Nómina</div><div class="kpi-v" id="d-nom">$0</div><div class="kpi-s">pagado</div></div>
+        <div class="kpi" id="kpi-locked" style="grid-column:1/-1;display:none;"><div class="locked-msg">🔒 Nómina y Punto: solo visible para dueños</div></div>
+      </div>
+
+      <!-- Tortillas -->
+      <div class="kpi4" style="grid-template-columns:1fr 1fr;">
+        <div class="kpi"><span class="kpi-ico">🌽</span><div class="kpi-lbl">T. Maíz</div><div class="kpi-v" id="d-tmaiz">0</div><div class="kpi-s">tortillas</div></div>
+        <div class="kpi"><span class="kpi-ico">🫓</span><div class="kpi-lbl">T. Harina</div><div class="kpi-v" id="d-tharina">0</div><div class="kpi-s">tortillas</div></div>
+      </div>
+
+      <!-- Tipo de servicio -->
+      <div class="dsec">
+        <div class="dsec-title">🛵 Tipo de Servicio</div>
+        <div style="display:flex;flex-direction:column;gap:8px;" id="d-servicio">
+          <div style="color:var(--c-tx3);font-size:12px;font-weight:700;text-align:center;padding:8px 0;">Sin datos de sesión aún</div>
+        </div>
+      </div>
+      <div class="dsec">
+        <div class="dsec-title">🥧 Ventas por Categoría</div>
+        <div class="pie-wrap">
+          <canvas id="pieChart" width="200" height="200"></canvas>
+          <div class="pie-leg" id="pieLeg"></div>
+        </div>
+      </div>
+      <div class="dsec">
+        <div class="dsec-title">🏆 Top Guisos</div>
+        <div id="dTopList"></div>
+      </div>
+      <div class="dsec">
+        <div class="dsec-title">📉 Top 3 Menos Vendidos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="d-bot-wrap">
+          <div>
+            <div style="font-size:10px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px;">Platillos</div>
+            <div id="dBotFood"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:900;color:var(--c-tx3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px;">Bebidas</div>
+            <div id="dBotDrink"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dsec owner-only" id="sec-cajeros">
+        <div class="dsec-title">👑 Desglose por Dueño</div>
+        <div class="emp-grid">
+          <div class="emp-card">
+            <div class="emp-name">Alex</div>
+            <div class="emp-row"><span>Venta</span><span id="e-alex-v">$0</span></div>
+            <div class="emp-row"><span>Nómina</span><span id="e-alex-n">$0</span></div>
+            <div class="emp-row"><span>Punto</span><span id="e-alex-p">$0</span></div>
+            <div class="emp-row"><span>% Venta</span><span id="e-alex-pct">0%</span></div>
+          </div>
+          <div class="emp-card">
+            <div class="emp-name">Beto</div>
+            <div class="emp-row"><span>Venta</span><span id="e-beto-v">$0</span></div>
+            <div class="emp-row"><span>Nómina</span><span id="e-beto-n">$0</span></div>
+            <div class="emp-row"><span>Punto</span><span id="e-beto-p">$0</span></div>
+            <div class="emp-row"><span>% Venta</span><span id="e-beto-pct">0%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="dsec">
+        <div class="dsec-title">📅 Historial de Días</div>
+        <div id="dDays"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VENTA POS -->
+<div class="view on" id="v-pos">
+  <div class="subtabs">
+    <button class="stab on" id="st-menu" onclick="showP('menu',this)">🌮 Menú</button>
+    <button class="stab" id="st-cart" onclick="showP('cart',this)">
+      🛒 Orden <span class="cbadge" id="cbadge" style="display:none">0</span>
+    </button>
+  </div>
+  <div class="panels">
+    <div class="panel on" id="p-menu">
+      <div class="searchbar">
+        <input class="sinput" id="sinput" type="text" placeholder="🔍  Buscar producto..." oninput="renderProds()">
+      </div>
+      <div class="catbar" id="catbar"></div>
+      <div class="pgrid" id="pgrid"></div>
+    </div>
+    <div class="panel" id="p-cart">
+      <div class="chdr">
+        <div class="ctitle">Tu Orden</div>
+        <div class="chbtns">
+          <button class="btn-plato" onclick="addPkg()">+ Plato</button>
+          <button class="btn-vac" onclick="vaciar()">Vaciar 🗑️</button>
+        </div>
+      </div>
+      <div class="cart-scroll">
+        <div class="cart-scroll-inner">
+        <div class="citems" id="citems">
+          <div class="cempty"><span class="cempty-ico">🌮</span>Toca <strong>+ Plato</strong> para empezar,<br>luego agrega productos del menú</div>
+        </div>
+        <div class="cfooter">
+        <div class="cline"><span>Subtotal</span><span id="cSub">$0.00</span></div>
+        <div class="discrow">
+          <input class="dinput" id="dinput" type="text" placeholder="Descuento % o cupón...">
+          <button class="dapply" onclick="applyDisc()">Aplicar</button>
+        </div>
+        <div class="cline" id="discLine" style="display:none;color:var(--c-gr)"><span>Descuento</span><span id="discVal"></span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <button id="ivaToggle" onclick="toggleIva()" style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;border:1.5px solid var(--c-bord);background:var(--c-surf2);color:var(--c-tx3);transition:all .15s;">+ IVA</button>
+            <span id="ivaLabel" style="font-size:11px;color:var(--c-tx3);font-weight:600;">IVA 16% — desactivado</span>
+          </div>
+          <span id="cTax" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c-tx3);">$0.00</span>
+        </div>
+        <div class="ctotal"><span>Total</span><span id="cTotal">$0.00</span></div>
+        <div id="owner-indicator" style="background:var(--c-surf2);border:1.5px solid var(--c-bord);border-radius:7px;padding:5px 10px;font-size:10px;font-weight:800;color:var(--c-tx2);display:none;">
+          <span style="font-size:10px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;color:var(--c-tx3);">Venta de · </span><span id="owner-name" style="color:var(--c-or);font-weight:900;">—</span>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--c-tx3);margin-bottom:3px;margin-top:2px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;">Tipo de servicio</div>
+          <div class="paymethods">
+            <button class="pmbn on" id="sv-aqui" onclick="selServicio('aqui')">🪑 Aquí</button>
+            <button class="pmbn" id="sv-llevar" onclick="selServicio('llevar')">🛍 Llevar</button>
+            <button class="pmbn" id="sv-domicilio" onclick="selServicio('domicilio')">🛵 Domicilio</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--c-tx3);margin-bottom:3px;margin-top:2px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;">Método de pago</div>
+          <div class="paymethods">
+            <button class="pmbn on" id="pm-efe" onclick="selPay('efectivo')">💵 Efectivo</button>
+            <button class="pmbn" id="pm-tar" onclick="selPay('tarjeta')">💳 Tarjeta</button>
+            <button class="pmbn" id="pm-tra" onclick="selPay('transferencia')">📲 Trans.</button>
+          </div>
+        </div>
+        <button class="btncharge" id="btnCobrar" onclick="processPay()" disabled>COBRAR $0.00</button>
+        </div><!-- cfooter -->
+        </div><!-- cart-scroll-inner -->
+      </div><!-- cart-scroll -->
+    </div><!-- p-cart -->
+  </div><!-- panels -->
+</div><!-- v-pos -->
+
+<!-- AGENTE IA -->
+<div class="view" id="v-agent">
+  <div class="agent-header">
+    <div class="agent-av">🤖</div>
+    <div class="agent-hinfo">
+      <div class="agent-hname">Asistente Totous</div>
+      <div class="agent-hsub">Pregúntame sobre tu negocio</div>
+    </div>
+    <div class="agent-hdot"></div>
+  </div>
+  <div class="achat" id="achat">
+    <div class="amsg bot">
+      <div class="amsg-av">🤖</div>
+      <div class="amsg-bbl">¡Hola! Soy tu <b>asistente de Tacos Totous</b>.<br><br>Puedo responderte sobre ventas, nómina, punto, guisos más vendidos, desglose por dueño y más.<br><br>¿En qué te puedo ayudar?</div>
+    </div>
+  </div>
+  <div class="asugs" id="asugs">
+    <button class="asug" onclick="ask('¿Cuánto fue el total de ventas?')">💰 Total ventas</button>
+    <button class="asug" onclick="ask('¿Cuántos tacos se vendieron?')">🌮 Tacos</button>
+    <button class="asug" onclick="ask('¿Cuántas bebidas se vendieron?')">🥤 Bebidas</button>
+    <button class="asug" onclick="ask('¿Cuánto fue el punto del día?')">⭐ Punto</button>
+    <button class="asug" onclick="ask('¿Cuánto fue la nómina?')">👥 Nómina</button>
+    <button class="asug" onclick="ask('¿Cuál fue el guiso más vendido?')">🏆 Top guiso</button>
+    <button class="asug" onclick="ask('¿Cuántas comandas hubo?')">📋 Comandas</button>
+    <button class="asug" onclick="ask('¿Cuánto vendió Alex y cuánto Beto?')">👑 Por dueño</button>
+    <button class="asug" onclick="ask('¿Cuál fue el día con más ventas?')">📅 Mejor día</button>
+  </div>
+  <div class="ainbar">
+    <input class="ainput" id="ainput" type="text" placeholder="Escribe tu pregunta..." onkeydown="if(event.key==='Enter')sendMsg()">
+    <button class="asend" onclick="sendMsg()">&#10148;</button>
+  </div>
+</div>
+
+<!-- COCINA -->
+<div class="view" id="v-coc">
+  <div class="kds-top">
+    <div class="kds-ttl">🍳 Cocina</div>
+    <div class="kds-sts">
+      <div class="kds-st"><div class="kds-n" id="kn">0</div><div class="kds-l">Nuevos</div></div>
+      <div class="kds-sep"></div>
+      <div class="kds-st"><div class="kds-n" id="kp">0</div><div class="kds-l">Preparando</div></div>
+      <div class="kds-sep"></div>
+      <div class="kds-st"><div class="kds-n" id="kd">0</div><div class="kds-l">Listos</div></div>
+    </div>
+  </div>
+  <div class="kds-mt">
+    <div id="k-empty" class="kds-empty">
+      <div style="font-size:60px;opacity:.35;margin-bottom:14px;">🍳</div>
+      <div style="font-size:15px;font-weight:800;color:#6B3810;">Sin pedidos</div>
+      <div style="font-size:12px;color:#4A2808;margin-top:6px;font-weight:600;">Aparecen al cobrar en Venta</div>
+    </div>
+    <div class="kds-scroll" id="kscroll" style="display:none"></div>
+  </div>
+</div>
+
+<!-- INVENTARIO -->
+<div class="view" id="v-inv">
+  <!-- INV TABS -->
+  <div style="display:flex;flex-shrink:0;background:var(--c-tx);border-bottom:2px solid #2A1400;">
+    <button class="stab on" id="itab-comp" onclick="showInvTab('compras',this)" style="color:#BF8850;">🛒 Ingredientes</button>
+    <button class="stab" id="itab-prod" onclick="showInvTab('produccion',this)" style="color:#BF8850;">🍳 Producción</button>
+    <!-- Recetas moved to its own section in nav -->
+  </div>
+
+  <!-- PANEL: INGREDIENTES DE COMPRA -->
+  <div id="inv-compras" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+    <div class="inv-scroll">
+      <div class="inv-pad">
+        <div class="sec-hdr">
+          <div><div class="sec-ttl">Ingredientes</div><div class="sec-sub">Insumos de compra · stock actual</div></div>
+          <button class="btn-add" onclick="openAddIngr()">+ Agregar</button>
+        </div>
+        <div class="icat-tabs" id="ictabs-ingr"></div>
+        <div class="icards" id="icards-ingr"></div>
+        <div class="itbl"><table><thead><tr>
+          <th>Ingrediente</th><th>Cat.</th><th>Unidad</th><th>Stock</th><th>P.Compra</th><th>Proveedor</th><th>Acciones</th>
+        </tr></thead><tbody id="itbody-ingr"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: PRODUCCIÓN -->
+  <div id="inv-produccion" style="display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+    <div class="inv-scroll">
+      <div class="inv-pad">
+        <div class="sec-hdr">
+          <div><div class="sec-ttl">Producción</div><div class="sec-sub">Elaborados y preparados · stock actual</div></div>
+          <button class="btn-add" onclick="openAddProd2()">+ Agregar</button>
+        </div>
+        <div class="icat-tabs" id="ictabs-prod"></div>
+        <div class="icards" id="icards-prod"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: RECETAS -->
+  <div id="inv-recetas" style="display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+    <div class="inv-scroll">
+      <div class="inv-pad">
+        <div class="sec-hdr">
+          <div><div class="sec-ttl">Recetas</div><div class="sec-sub">Costo por platillo · calculado automáticamente</div></div>
+          <button class="btn-add" onclick="openAddReceta()">+ Nueva receta</button>
+        </div>
+        <!-- Tipo de receta tabs -->
+        <div class="icat-tabs" id="rtabs"></div>
+        <!-- Lista de recetas -->
+        <div id="receta-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECETAS -->
+<div class="view" id="v-rec">
+  <div class="rec-scroll">
+    <div class="rec-pad">
+
+      <!-- Header con KPIs -->
+      <div class="sec-hdr">
+        <div>
+          <div class="sec-ttl">Recetas</div>
+          <div style="font-size:12px;color:var(--c-tx2);font-weight:600;margin-top:1px;">Subrecetas y recetas finales · costo automático</div>
+        </div>
+        <button class="btn-add" onclick="openAddReceta()">+ Nueva</button>
+      </div>
+
+      <!-- KPIs rápidos -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div class="kpi"><span class="kpi-ico">📋</span><div class="kpi-lbl">Total</div><div class="kpi-v" id="rec-kpi-total">0</div><div class="kpi-s">recetas</div></div>
+        <div class="kpi"><span class="kpi-ico">🔗</span><div class="kpi-lbl">Subrecetas</div><div class="kpi-v" id="rec-kpi-sub">0</div><div class="kpi-s">bases</div></div>
+        <div class="kpi"><span class="kpi-ico">🌮</span><div class="kpi-lbl">Recetas</div><div class="kpi-v" id="rec-kpi-rec">0</div><div class="kpi-s">finales</div></div>
+      </div>
+
+      <!-- Filtros por tipo/categoría -->
+      <div class="icat-tabs" id="rtabs-v"></div>
+
+      <!-- Lista -->
+      <div id="receta-list-v"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- COMPRAS -->
+<div class="view" id="v-comp">
+  <div class="comp-scroll">
+    <div class="comp-pad">
+
+      <!-- Header -->
+      <div class="sec-hdr">
+        <div>
+          <div class="sec-ttl">Compras</div>
+          <div style="font-size:12px;color:var(--c-tx2);font-weight:600;margin-top:1px;">Registro diario · actualiza el inventario</div>
+        </div>
+        <button class="btn-add" onclick="openAddCompra()">+ Registrar</button>
+      </div>
+
+      <!-- Resumen del día -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="comp-resumen">
+        <div class="kpi"><span class="kpi-ico">📦</span><div class="kpi-lbl">Compras hoy</div><div class="kpi-v" id="comp-hoy-n">0</div><div class="kpi-s">productos</div></div>
+        <div class="kpi"><span class="kpi-ico">💰</span><div class="kpi-lbl">Total hoy</div><div class="kpi-v" id="comp-hoy-t" style="font-size:18px;">$0</div><div class="kpi-s">gastado</div></div>
+      </div>
+
+      <!-- Filtro fechas -->
+      <div style="display:flex;gap:8px;overflow-x:auto;flex-shrink:0;" id="comp-filter-tabs">
+        <button class="ictab on" id="cf-hoy"    onclick="setCompFilter('hoy',this)">Hoy</button>
+        <button class="ictab"    id="cf-semana" onclick="setCompFilter('semana',this)">Esta semana</button>
+        <button class="ictab"    id="cf-todo"   onclick="setCompFilter('todo',this)">Todo</button>
+      </div>
+
+      <!-- Lista de días -->
+      <div id="comp-list">
+        <div class="comp-empty">Sin compras registradas.<br>Toca <strong>+ Registrar</strong> para empezar.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCCIONES -->
+<div class="view" id="v-prod">
+  <div class="prod-scroll">
+    <div class="prod-pad">
+
+      <div class="sec-hdr">
+        <div>
+          <div class="sec-ttl">Producción</div>
+          <div style="font-size:12px;color:var(--c-tx2);font-weight:600;margin-top:1px;">Registro de lo que preparas · actualiza el inventario</div>
+        </div>
+        <button class="btn-add" onclick="openAddProdLog()">+ Registrar</button>
+      </div>
+
+      <!-- KPIs del día -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div class="kpi"><span class="kpi-ico">🍳</span><div class="kpi-lbl">Hoy</div><div class="kpi-v" id="pl-hoy-n">0</div><div class="kpi-s">producciones</div></div>
+        <div class="kpi"><span class="kpi-ico">🫙</span><div class="kpi-lbl">Salsas</div><div class="kpi-v" id="pl-hoy-s">0</div><div class="kpi-s">lotes</div></div>
+        <div class="kpi"><span class="kpi-ico">🥩</span><div class="kpi-lbl">Guisos</div><div class="kpi-v" id="pl-hoy-g">0</div><div class="kpi-s">lotes</div></div>
+      </div>
+
+      <!-- Filtro -->
+      <div style="display:flex;gap:8px;overflow-x:auto;flex-shrink:0;">
+        <button class="ictab on" id="pf-hoy"    onclick="setProdFilter('hoy',this)">Hoy</button>
+        <button class="ictab"    id="pf-semana" onclick="setProdFilter('semana',this)">Esta semana</button>
+        <button class="ictab"    id="pf-todo"   onclick="setProdFilter('todo',this)">Todo</button>
+      </div>
+
+      <div id="prod-log-list">
+        <div class="comp-empty">Sin producciones registradas.<br>Toca <strong>+ Registrar</strong> para empezar.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PERSONAL -->
+<div class="view" id="v-per">
+  <!-- Lock screen -->
+  <div id="per-lock" style="position:absolute;inset:0;background:var(--c-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;z-index:10;">
+    <div style="font-size:56px;">🔐</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;background:var(--g-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Acceso Restringido</div>
+    <div style="font-size:13px;color:var(--c-tx2);font-weight:600;text-align:center;line-height:1.6;">Esta sección solo puede ser accedida<br>por el administrador del sistema.</div>
+    <button class="mprim" style="padding:14px 32px;font-size:15px;border-radius:20px;" onclick="askMaster()">🔑 Ingresar Clave Maestra</button>
+  </div>
+  <!-- Content (hidden until unlocked) -->
+  <div id="per-content" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="per-scroll">
+      <div class="per-pad">
+        <div class="sec-hdr">
+          <div><div class="sec-ttl">Personal</div><div class="sec-sub">Gestión de accesos</div></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-add" onclick="openAddStaff()">+ Agregar</button>
+            <button style="padding:10px 14px;border-radius:20px;background:rgba(212,0,30,.08);border:2px solid rgba(212,0,30,.2);color:var(--c-re);font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;" onclick="lockPer()">🔒 Bloquear</button>
+          </div>
+        </div>
+        <div id="staffList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div class="view" id="v-cfg">
+  <div class="cfg-scroll">
+    <div class="cfg-pad">
+      <div><div class="sec-ttl">Configuración</div><div class="sec-sub">Negocio y Google Sheets</div></div>
+
+      <!-- SESIÓN ACTIVA -->
+      <div class="cfg-card" style="background:var(--g-dark);border-color:#3A2000;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="cfg-user-av" style="width:44px;height:44px;border-radius:50%;background:var(--g-main);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;flex-shrink:0;">?</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:10px;color:#6B5040;font-weight:900;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px;">Sesión activa</div>
+            <div id="cfg-user-name" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#FFF5E8;line-height:1.1;">—</div>
+            <div id="cfg-user-role" style="font-size:11px;font-weight:700;color:#E87000;margin-top:1px;">—</div>
+          </div>
+          <button onclick="cerrarSesion()" style="padding:10px 16px;border-radius:12px;background:rgba(212,0,30,.15);border:1.5px solid rgba(212,0,30,.3);color:#FF6060;font-size:12px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;white-space:nowrap;flex-shrink:0;">
+            🚪 Cerrar sesión
+          </button>
+        </div>
+      </div>
+
+      <!-- PROVEEDORES — visible para todos -->
+      <div class="cfg-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <div class="cfg-ct" style="margin-bottom:0;">🚚 Proveedores</div>
+            <div class="cfg-cs" style="margin-bottom:0;">Tiendas y distribuidores donde compras</div>
+          </div>
+          <button class="btn-add" style="font-size:11px;padding:8px 14px;" onclick="openAddProv()">+ Agregar</button>
+        </div>
+        <div id="prov-list"></div>
+      </div>
+
+      <div class="cfg-card">
+        <div class="cfg-ct">🏪 Datos del Negocio</div>
+        <div class="cfg-cs">Aparecen en los recibos de venta.</div>
+        <div class="cfg-field"><label class="cfg-lbl">Nombre</label><input class="cfg-inp" id="cname" value="Tacos Totous"></div>
+        <div class="cfg-field"><label class="cfg-lbl">Teléfono</label><input class="cfg-inp" id="cphone" value="(55) 0000-0000"></div>
+        <div class="cfg-field"><label class="cfg-lbl">Dirección</label><input class="cfg-inp" id="caddr" placeholder="Av. Principal 123"></div>
+        <button class="mprim" style="width:100%;margin-top:4px;" onclick="saveBiz()">Guardar datos</button>
+      </div>
+      <div class="cfg-card">
+        <div class="cfg-ct">📊 Google Sheets</div>
+        <div class="cfg-cs">Cada venta se registra automáticamente en tu hoja de cálculo.</div>
+        <div class="syst sy0" id="syncSt">⏳ Sin sincronizar aún</div>
+        <div class="cfg-field"><label class="cfg-lbl">URL del Apps Script</label><input class="cfg-inp" id="curl" placeholder="https://script.google.com/macros/s/..."></div>
+        <div class="ibox"><strong>¿Cómo configurarlo?</strong><br>1. Google Sheet → <strong>Extensiones → Apps Script</strong><br>2. Pega el código → <strong>Implementar → Nueva implementación</strong><br>3. Tipo: App web · Acceso: Cualquier persona<br>4. Copia la URL y pégala arriba.</div>
+        <div class="cfg-field">
+          <label class="cfg-lbl">Código Apps Script</label>
+          <textarea class="cfg-inp" rows="6" readonly style="font-family:'JetBrains Mono',monospace;font-size:11px;resize:none;">function doPost(e){
+  try{
+    var s=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var d=JSON.parse(e.postData.contents);
+    if(s.getLastRow()===0) s.appendRow(['Fecha','Hora','Orden#','Plato','Producto','Cant','Precio','Subtotal','Total','Pago','Nota']);
+    d.rows.forEach(function(r){s.appendRow(r);});
+    return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+  }catch(err){
+    return ContentService.createTextOutput(JSON.stringify({ok:false,error:err.message})).setMimeType(ContentService.MimeType.JSON);
+  }
+}</textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-sync" onclick="testSheets()">🔌 Probar</button>
+          <button class="mcancel" onclick="saveUrl()">💾 Guardar URL</button>
+        </div>
+      </div>
+      <div class="cfg-card">
+        <div class="cfg-ct">📋 Historial de Sincronización</div>
+        <div class="slog" id="slog"><div style="color:var(--c-tx3);font-size:12px;padding:12px 0;text-align:center;">Sin historial aún</div></div>
+      </div>
+
+      <!-- EMPLEADOS — solo dueños -->
+      <div class="emp-sec owner-only" id="sec-empleados">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <div class="sec-ttl">Empleados</div>
+            <div style="font-size:12px;color:var(--c-tx2);font-weight:600;margin-top:1px;">Nómina y fechas · Solo visible para dueños</div>
+          </div>
+          <button class="btn-add" onclick="openAddEmp()">+ Agregar</button>
+        </div>
+        <!-- Activos -->
+        <div style="font-size:10px;font-weight:900;color:var(--c-tx3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;">● Activos</div>
+        <div id="empActivos"><div style="color:var(--c-tx3);font-size:13px;font-weight:700;text-align:center;padding:16px 0;">Sin empleados activos</div></div>
+        <!-- Bajas -->
+        <div style="font-size:10px;font-weight:900;color:var(--c-tx3);letter-spacing:.8px;text-transform:uppercase;margin:14px 0 8px;">○ Bajas / Ex-empleados</div>
+        <div id="empBajas"><div style="color:var(--c-tx3);font-size:13px;font-weight:700;text-align:center;padding:16px 0;">Sin registros de baja</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</div><!-- fin .app-shell -->
+
+<nav class="bot-nav">
+  <button class="bnt" id="bn-dash" onclick="go('dash',this)"><span class="bi">📊</span>Panel</button>
+  <button class="bnt on" id="bn-pos" onclick="go('pos',this)"><span class="bi">🌮</span>Venta</button>
+  <button class="bnt" id="bn-coc" onclick="go('coc',this)"><span class="bi">👨‍🍳</span>Cocina</button>
+  <button class="bnt" id="bn-inv" onclick="go('inv',this)"><span class="bi">📦</span>Inventario</button>
+  <button class="bnt" id="bn-comp" onclick="go('comp',this)"><span class="bi">🛒</span>Compras</button>
+  <button class="bnt" id="bn-prod" onclick="go('prod',this)"><span class="bi">🍳</span>Producción</button>
+  <button class="bnt" id="bn-rec" onclick="go('rec',this)"><span class="bi">📋</span>Recetas</button>
+  <button class="bnt" id="bn-agent" onclick="go('agent',this)"><span class="bi">🤖</span>Agente</button>
+  <button class="bnt" id="bn-cfg" onclick="go('cfg',this)"><span class="bi">⚙️</span>Config</button>
+</nav>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-logo">Tacos Totous</div>
+  <div class="login-sub">Sistema POS</div>
+  <div class="login-card" id="loginStep1">
+    <div class="login-ttl">Iniciar Sesión</div>
+    <div class="login-hint">Selecciona tu nombre para continuar:</div>
+    <div class="user-list" id="userList"></div>
+    <div style="margin-top:16px;border-top:1px solid #3A2000;padding-top:14px;">
+      <button onclick="openLoginEditor()" style="width:100%;background:transparent;border:1.5px solid #3A2000;border-radius:10px;padding:12px;color:#6B4020;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;touch-action:manipulation;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;" onmouseover="this.style.borderColor='#E85500';this.style.color='#F0A000'" onmouseout="this.style.borderColor='#3A2000';this.style.color='#6B4020'">
+        ✏️ Editar Usuarios
+      </button>
+    </div>
+  </div>
+  <div class="login-card" id="loginStep2" style="display:none">
+    <div class="login-ttl">Ingresa tu PIN</div>
+    <div class="pin-wrap">
+      <div class="pin-who" id="pinWho"></div>
+      <input class="pin-input" id="pinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="pin-error" id="pinError"></div>
+      <div class="pin-btns">
+        <button class="pin-back" onclick="backToUsers()">← Regresar</button>
+        <button class="pin-enter" onclick="doLogin()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paso 3: Clave maestra para editar usuarios -->
+  <div class="login-card" id="loginStep3" style="display:none">
+    <div class="login-ttl">🔐 Clave Maestra</div>
+    <div class="pin-wrap">
+      <div class="pin-who">Solo el administrador del sistema puede editar usuarios.</div>
+      <input class="pin-input" id="masterLoginInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••" onkeydown="if(event.key==='Enter')checkMasterLogin()">
+      <div class="pin-error" id="masterLoginError"></div>
+      <div class="pin-btns">
+        <button class="pin-back" onclick="backToUsers()">← Regresar</button>
+        <button class="pin-enter" onclick="checkMasterLogin()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paso 4: Editor de usuarios inline -->
+  <div class="login-card" id="loginStep4" style="display:none;max-width:400px;width:100%;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="login-ttl" style="margin:0;">✏️ Editar Usuarios</div>
+      <button onclick="backToUsers()" style="background:transparent;border:1.5px solid #3A2000;border-radius:8px;padding:6px 12px;color:#6B4020;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">✕ Cerrar</button>
+    </div>
+    <div id="loginEditorList" style="display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow-y:auto;margin-bottom:12px;"></div>
+    <button onclick="openLoginAddUser()" style="width:100%;padding:13px;border-radius:10px;background:linear-gradient(135deg,#E85500,#F0A000);border:none;color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 4px 16px rgba(232,85,0,.35);">+ Agregar Nuevo Usuario</button>
+  </div>
+
+  <!-- Paso 5: Formulario agregar/editar usuario -->
+  <div class="login-card" id="loginStep5" style="display:none;max-width:400px;width:100%;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="login-ttl" id="loginFormTitle" style="margin:0;">➕ Nuevo Usuario</div>
+      <button onclick="backToEditor()" style="background:transparent;border:1.5px solid #3A2000;border-radius:8px;padding:6px 12px;color:#6B4020;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">← Volver</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:10px;font-weight:900;color:#6B5040;letter-spacing:.7px;text-transform:uppercase;">Nombre completo</label>
+        <input id="lf-name" style="background:#1A0800;border:2px solid #3A2000;border-radius:10px;padding:12px 14px;color:#FFF5E8;font-size:15px;font-family:'Nunito',sans-serif;outline:none;width:100%;" placeholder="Ej: María García" onfocus="this.style.borderColor='#E85500'" onblur="this.style.borderColor='#3A2000'">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:10px;font-weight:900;color:#6B5040;letter-spacing:.7px;text-transform:uppercase;">Usuario</label>
+        <input id="lf-user" style="background:#1A0800;border:2px solid #3A2000;border-radius:10px;padding:12px 14px;color:#FFF5E8;font-size:15px;font-family:'Nunito',sans-serif;outline:none;width:100%;" placeholder="sin espacios, ej: maria" autocapitalize="none" onfocus="this.style.borderColor='#E85500'" onblur="this.style.borderColor='#3A2000'">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:10px;font-weight:900;color:#6B5040;letter-spacing:.7px;text-transform:uppercase;">PIN (mínimo 4 dígitos)</label>
+        <input id="lf-pass" type="password" inputmode="numeric" style="background:#1A0800;border:2px solid #3A2000;border-radius:10px;padding:12px 14px;color:#FFF5E8;font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:6px;outline:none;width:100%;" placeholder="••••" onfocus="this.style.borderColor='#E85500'" onblur="this.style.borderColor='#3A2000'">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:10px;font-weight:900;color:#6B5040;letter-spacing:.7px;text-transform:uppercase;">Rol</label>
+          <select id="lf-role" style="background:#1A0800;border:2px solid #3A2000;border-radius:10px;padding:12px 10px;color:#FFF5E8;font-size:14px;font-family:'Nunito',sans-serif;outline:none;width:100%;">
+            <option value="dueno">👑 Dueño</option>
+            <option value="cajero">💳 Cajero</option>
+            <option value="cocinero">👨‍🍳 Cocinero</option>
+            <option value="mesero">🛎 Mesero</option>
+            <option value="cocina">📺 Cocina KDS</option>
+            <option value="admin">⚙️ Admin</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:10px;font-weight:900;color:#6B5040;letter-spacing:.7px;text-transform:uppercase;">Estado</label>
+          <select id="lf-status" style="background:#1A0800;border:2px solid #3A2000;border-radius:10px;padding:12px 10px;color:#FFF5E8;font-size:14px;font-family:'Nunito',sans-serif;outline:none;width:100%;">
+            <option value="activo">✅ Activo</option>
+            <option value="inactivo">○ Inactivo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="loginFormError" style="color:#D4001E;font-size:12px;font-weight:700;min-height:18px;margin-bottom:10px;text-align:center;"></div>
+    <button onclick="saveLoginUser()" style="width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#E85500,#F0A000);border:none;color:#fff;font-size:15px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;">💾 Guardar</button>
+  </div>
+</div>
+
+<!-- MODAL: Tortilla -->
+<div class="modal-overlay" id="mTort">
+  <div class="tort-modal">
+    <div class="torthdr">
+      <span class="tortmoji" id="tEmoji">🌮</span>
+      <div class="torttl" id="tName">Taco</div>
+      <div class="tortsub">¿De qué tortilla lo quieres?</div>
+      <span class="tortreq">⚠️ OBLIGATORIO</span>
+    </div>
+    <div class="tortopts">
+      <div class="tortopt" id="to-maiz" onclick="selTort('maiz')">
+        <div class="toi">🌽</div><div class="ton">Maíz</div>
+        <div class="tod">Tradicional</div>
+        <div class="tochk" id="tc-maiz"></div>
+      </div>
+      <div class="tortopt" id="to-harina" onclick="selTort('harina')">
+        <div class="toi">🫓</div><div class="ton">Harina</div>
+        <div class="tod">Suavecita</div>
+        <div class="tochk" id="tc-harina"></div>
+      </div>
+    </div>
+    <button class="btn-addtaco" id="btnTacoAdd" onclick="confirmTort()" disabled>AGREGAR AL PLATO</button>
+  </div>
+</div>
+
+<!-- MODAL: Producto -->
+<div class="modal-overlay" id="mProd">
+  <div class="modal">
+    <div class="modal-ttl" id="mProdTitle">Agregar Producto</div>
+    <div class="mgrid">
+      <div class="mf full"><label class="ml">Nombre</label><input class="mi" id="fp-name" placeholder="Ej: Barbacoa"></div>
+      <div class="mf"><label class="ml">Emoji</label><input class="mi" id="fp-emoji" placeholder="🌮"></div>
+      <div class="mf"><label class="ml">Categoría</label>
+        <select class="mi" id="fp-cat">
+          <option>Tacos</option><option>Bebidas</option><option>Almuerzos</option>
+          <option>Misceláneos</option><option>Desechables</option><option>Limpieza</option><option>Extras</option>
+        </select>
+      </div>
+      <div class="mf"><label class="ml">Precio ($)</label><input class="mi" id="fp-price" type="number" inputmode="decimal" placeholder="0.00"></div>
+      <div class="mf"><label class="ml">Costo ($)</label><input class="mi" id="fp-cost" type="number" inputmode="decimal" placeholder="0.00"></div>
+      <div class="mf"><label class="ml">Stock</label><input class="mi" id="fp-stock" type="number" inputmode="numeric" placeholder="0"></div>
+      <div class="mf"><label class="ml">Stock mín.</label><input class="mi" id="fp-min" type="number" inputmode="numeric" placeholder="5"></div>
+    </div>
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeM('mProd')">Cancelar</button>
+      <button class="mprim" onclick="saveProd()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Personal -->
+<div class="modal-overlay" id="mStaff">
+  <div class="modal">
+    <div class="modal-ttl" id="mStaffTitle">Agregar Personal</div>
+    <div class="mgrid">
+      <div class="mf full"><label class="ml">Nombre completo</label><input class="mi" id="fs-name" placeholder="Ej: María García"></div>
+      <div class="mf full"><label class="ml">Usuario</label><input class="mi" id="fs-user" placeholder="maria.garcia" autocapitalize="none"></div>
+      <div class="mf full"><label class="ml">PIN (4-6 dígitos)</label><input class="mi" id="fs-pass" type="password" inputmode="numeric" placeholder="Mínimo 4 dígitos"></div>
+      <div class="mf"><label class="ml">Rol</label>
+        <select class="mi" id="fs-role">
+          <option value="dueno">👑 Dueño</option>
+          <option value="cajero">💳 Cajero</option>
+          <option value="cocinero">👨‍🍳 Cocinero</option>
+          <option value="mesero">🛎 Mesero</option>
+          <option value="cocina">📺 Cocina KDS</option>
+          <option value="admin">⚙️ Admin</option>
+        </select>
+      </div>
+      <div class="mf"><label class="ml">Estado</label>
+        <select class="mi" id="fs-status">
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+        </select>
+      </div>
+    </div>
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeM('mStaff')">Cancelar</button>
+      <button class="mprim" onclick="saveStaff()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Recibo -->
+<div class="modal-overlay" id="mRcpt">
+  <div class="rcpt">
+    <span class="chk">✅</span>
+    <div style="font-size:16px;font-weight:900;margin-bottom:2px;color:var(--c-tx)">¡Pago Exitoso!</div>
+    <div style="font-size:12px;color:var(--c-tx2);margin-bottom:14px;font-weight:600">Recibo de venta</div>
+    <div class="rcpt-logo" id="rBiz">Tacos Totous</div>
+    <div class="rcpt-addr" id="rInfo">La mejor taquería 🌮</div>
+    <hr class="rcpt-div">
+    <div id="rItems"></div>
+    <hr class="rcpt-div">
+    <div class="rcpt-line"><span>Subtotal</span><span id="r-sub"></span></div>
+    <div class="rcpt-line" id="r-dline" style="display:none;color:var(--c-gr)"><span>Descuento</span><span id="r-disc"></span></div>
+    <div class="rcpt-line" id="r-taxline" style="display:none;"><span>IVA (16%)</span><span id="r-tax"></span></div>
+    <div class="rcpt-total"><span>TOTAL</span><span id="r-total"></span></div>
+    <div class="rcpt-mth" id="r-mth"></div>
+    <hr class="rcpt-div">
+    <div class="rcpt-ty">¡Buen Provecho!</div>
+    <div class="rcpt-sb" id="rTy">Gracias por visitar Tacos Totous 🔥</div>
+    <button class="mprim" style="width:100%;padding:15px;font-size:15px;" onclick="newSale()">NUEVA VENTA</button>
+  </div>
+</div>
+
+<!-- Módulos JS — orden de carga es importante -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+  <script src="firebase.js"></script>
+  <script src="productos.js"></script>
+  <script src="usuarios.js"></script>
+  <script src="ventas.js"></script>
+  <script src="inventario.js"></script>
+  <script src="productos.js"></script>
+  <script src="ventas.js"></script>
+  <script src="inventario.js"></script>
+  <script src="recetas.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="cocina.js"></script>
+  <script src="personal.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
